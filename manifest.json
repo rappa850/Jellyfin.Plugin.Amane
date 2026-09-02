@@ -2,11 +2,44 @@
     {
         "guid": "9f2e4a6b-7c1d-4e3f-8a5b-0d9c2e1f4a7b",
         "name": "Amane",
-        "description": "对接本地 Amane 元数据服务的透明代理元数据插件：影片/人物元数据、封面与背景图、预告片、来源站外部链接。",
+        "description": "对接本地 Amane 元数据服务的透明代理元数据插件：影片/人物元数据、封面与背景图、影片与演员 ID 绑定。",
         "overview": "Amane 后端完成番号提取、离线库检索与 LLM 中文润色，本插件仅作为 Thin Client 把结果映射回 Jellyfin。",
         "owner": "rappa850",
         "category": "Metadata",
         "imageUrl": "https://raw.githubusercontent.com/rappa850/Jellyfin.Plugin.Amane/main/thumb.png",
-        "versions": []
+        "versions": [
+            {
+                "version": "0.1.3.0",
+                "changelog": "见 https://github.com/rappa850/Jellyfin.Plugin.Amane/releases/tag/v0.1.3",
+                "targetAbi": "10.11.0.0",
+                "sourceUrl": "https://github.com/rappa850/Jellyfin.Plugin.Amane/releases/download/v0.1.3/Jellyfin.Plugin.Amane.zip",
+                "checksum": "e95f3877d70351de4273d4a7dff3a1b3",
+                "timestamp": "2026-09-02T05:52:24Z"
+            },
+            {
+                "version": "0.1.2.0",
+                "changelog": "见 https://github.com/rappa850/Jellyfin.Plugin.Amane/releases/tag/v0.1.2",
+                "targetAbi": "10.11.0.0",
+                "sourceUrl": "https://github.com/rappa850/Jellyfin.Plugin.Amane/releases/download/v0.1.2/Jellyfin.Plugin.Amane.zip",
+                "checksum": "30795dbc07fee57420193989a17e786d",
+                "timestamp": "2026-09-02T05:39:47Z"
+            },
+            {
+                "version": "0.1.1.0",
+                "changelog": "见 https://github.com/rappa850/Jellyfin.Plugin.Amane/releases/tag/v0.1.1",
+                "targetAbi": "10.11.0.0",
+                "sourceUrl": "https://github.com/rappa850/Jellyfin.Plugin.Amane/releases/download/v0.1.1/Jellyfin.Plugin.Amane.zip",
+                "checksum": "bc7976765c466da6e8c77a640029e950",
+                "timestamp": "2026-09-02T05:30:22Z"
+            },
+            {
+                "version": "0.1.0.0",
+                "changelog": "见 https://github.com/rappa850/Jellyfin.Plugin.Amane/releases/tag/v0.1.0",
+                "targetAbi": "10.11.0.0",
+                "sourceUrl": "https://github.com/rappa850/Jellyfin.Plugin.Amane/releases/download/v0.1.0/Jellyfin.Plugin.Amane.zip",
+                "checksum": "c67c87fc14522cbeea8b7ec1cd1fc406",
+                "timestamp": "2026-09-02T05:15:44Z"
+            }
+        ]
     }
 ]

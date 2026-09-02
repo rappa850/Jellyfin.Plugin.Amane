@@ -66,7 +66,9 @@ jobs:
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email 'github-actions[bot]@users.noreply.github.com'
+          # tag 触发的 checkout 是分离 HEAD 且只拉了 tag 引用，需显式抓取 main
+          git fetch origin main:main
           git checkout main
           git add manifest.json
           git commit -m "chore: manifest 增加 ${{ github.ref_name }} 版本条目 [skip ci]"
-          git push
+          git push origin main
