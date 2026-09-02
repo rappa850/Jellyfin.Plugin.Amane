@@ -1,0 +1,9 @@
+{
+    "guid": "9f2e4a6b-7c1d-4e3f-8a5b-0d9c2e1f4a7b",
+    "name": "Amane",
+    "description": "对接本地 Amane 元数据服务的透明代理元数据插件：影片/人物元数据、封面与背景图、预告片、来源站外部链接。",
+    "overview": "Amane 后端完成番号提取、离线库检索与 LLM 中文润色，本插件仅作为 Thin Client 把结果映射回 Jellyfin。",
+    "owner": "rappa850",
+    "category": "Metadata",
+    "imageUrl": "https://raw.githubusercontent.com/rappa850/Jellyfin.Plugin.Amane/main/thumb.png"
+}
