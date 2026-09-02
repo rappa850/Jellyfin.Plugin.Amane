@@ -2,11 +2,19 @@
 
 Jellyfin 10.11 的元数据插件，作为本地 [Amane](https://github.com/sqzw-x/amane) 元数据服务的**透明 HTTP 代理客户端（Thin Client）**。
 
+接入 Amane 之后，Jellyfin 扫库即可自动获得完整的影片信息：
+
+- **影片元数据**：番号+标题、日文原标题、LLM 润色的中文简介、发行日期、厂商、流派、评分
+- **图片**：封面（Primary）、背景图/剧照（Backdrop），由 Jellyfin 自动下载缓存
+- **演员信息**：头像、简介、生日，演员随影片自动绑定 Amane ID，同名演员不混淆
+
+整个过程无需手工干预：Amane 后端完成文件名清洗、番号提取、PostgreSQL 离线库毫秒级检索与 LLM 中文润色，本插件只负责把结果透明地映射回 Jellyfin。
+
 对接的 Amane 版本：**v0.6.2**（测试开发基准版本）。
 
 ## 实现思路
 
-Amane 后端已完成文件名清洗、番号提取、PostgreSQL 离线库检索与 LLM 中文润色，因此插件保持极简，不做任何番号正则解析、多源降级或图片中转：
+Amane 后端已完成所有重活，因此插件保持极简，不做任何番号正则解析、多源降级或图片中转：
 
 1. 接收 Jellyfin 传入的文件名/番号；
 2. 请求 Amane JSON API（`GET /api/metadata?search=…`、`GET /api/actors?search=…`，`Authorization: Bearer` 鉴权）；
