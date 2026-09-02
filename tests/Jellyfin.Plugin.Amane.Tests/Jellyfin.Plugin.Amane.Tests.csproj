@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- 本机仅有 .NET 10 运行时；被测插件目标 net9.0，net10 可正常加载 -->
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.13.0" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" />
+    <!-- 主项目的 Jellyfin 引用带 PrivateAssets=all 不传递，测试项目需自行引用 -->
+    <PackageReference Include="Jellyfin.Controller" Version="10.11.11" />
+    <PackageReference Include="Jellyfin.Model" Version="10.11.11" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Jellyfin.Plugin.Amane.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- 真实 API 响应样本，随测试输出目录拷贝 -->
+    <None Include="..\..\Amane\amane-response.sample.json" Link="amane-response.sample.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\Amane\amane-actor.sample.json" Link="amane-actor.sample.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>
