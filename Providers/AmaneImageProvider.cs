@@ -8,6 +8,7 @@ using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Providers;
 using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Providers;
+using Microsoft.Extensions.Logging;
 
 namespace Jellyfin.Plugin.Amane.Providers;
 
@@ -17,14 +18,17 @@ namespace Jellyfin.Plugin.Amane.Providers;
 public class AmaneImageProvider : IRemoteImageProvider, IHasOrder
 {
     private readonly AmaneClient _client;
+    private readonly ILogger<AmaneImageProvider> _logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="AmaneImageProvider"/> class.
     /// </summary>
     /// <param name="client">Instance of <see cref="AmaneClient"/>.</param>
-    public AmaneImageProvider(AmaneClient client)
+    /// <param name="logger">Instance of the <see cref="ILogger{AmaneImageProvider}"/> interface.</param>
+    public AmaneImageProvider(AmaneClient client, ILogger<AmaneImageProvider> logger)
     {
         _client = client;
+        _logger = logger;
     }
 
     /// <inheritdoc />
@@ -49,6 +53,7 @@ public class AmaneImageProvider : IRemoteImageProvider, IHasOrder
         var metadata = await _client.ResolveMetadataAsync(item.ProviderIds, item.Name, cancellationToken).ConfigureAwait(false);
         if (metadata is null)
         {
+            _logger.LogInformation("Amane 图片解析未识别: {Name}", item.Name);
             return Enumerable.Empty<RemoteImageInfo>();
         }
 

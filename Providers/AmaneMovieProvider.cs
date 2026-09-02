@@ -65,9 +65,11 @@ public class AmaneMovieProvider : IRemoteMetadataProvider<Movie, MovieInfo>, IHa
         var metadata = await _client.ResolveMetadataAsync(info.ProviderIds, info.Name, cancellationToken).ConfigureAwait(false);
         if (metadata is null)
         {
-            _logger.LogDebug("Amane 未命中: {Name}", info.Name);
+            _logger.LogInformation("Amane 未识别: {Name}", info.Name);
             return result;
         }
+
+        _logger.LogDebug("Amane 命中: {Name} -> {Number} (id {Id})", info.Name, metadata.Number, metadata.Id);
 
         result.HasMetadata = true;
         result.Item = MapToMovie(metadata);
@@ -125,6 +127,11 @@ public class AmaneMovieProvider : IRemoteMetadataProvider<Movie, MovieInfo>, IHa
         }
 
         var items = await _client.SearchAsync(query, 10, cancellationToken).ConfigureAwait(false);
+        if (items.Count == 0)
+        {
+            _logger.LogInformation("Amane 搜索无结果: {Query}", query);
+        }
+
         return items.Select(ToSearchResult);
     }
 

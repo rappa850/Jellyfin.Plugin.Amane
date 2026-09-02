@@ -88,6 +88,17 @@ public class ContractDeserializationTests
     }
 
     [Fact]
+    public void HealthSample_Deserializes()
+    {
+        var json = File.ReadAllText("amane-health.sample.json");
+        var health = JsonSerializer.Deserialize<AmaneHealthResponse>(json, JsonOptions);
+
+        Assert.NotNull(health);
+        Assert.Equal("ok", health.Status);
+        Assert.False(string.IsNullOrWhiteSpace(health.Version));
+    }
+
+    [Fact]
     public void EmptyPayload_DeserializesWithoutThrowing()
     {
         var metadata = JsonSerializer.Deserialize<AmaneMetadata>("{}", JsonOptions);

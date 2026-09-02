@@ -17,6 +17,17 @@ if [[ -z "${AMANE_TOKEN:-}" ]]; then
   exit 1
 fi
 
+# 健康检查采样（无需 token），对应配置页"测试连接"探针
+HEALTH_OUT="$(cd "$(dirname "$0")/.." && pwd)/Amane/amane-health.sample.json"
+
+echo "GET ${AMANE_URL}/api/health"
+curl -sS -m 15 \
+  "${AMANE_URL}/api/health" \
+  -o "${HEALTH_OUT}" -w 'HTTP %{http_code}\n'
+
+python3 -m json.tool --no-ensure-ascii "${HEALTH_OUT}" > /dev/null
+echo "已保存到 ${HEALTH_OUT}"
+
 echo "GET ${AMANE_URL}/api/metadata?search=${QUERY}&limit=1"
 curl -sS -m 15 --get \
   -H "Authorization: Bearer ${AMANE_TOKEN}" \
@@ -72,7 +83,7 @@ if [[ -n "${ACTOR_DETAIL_ID}" ]]; then
 fi
 
 # T3 实时契约断言：字段缺失/类型漂移时非零退出
-python3 - "${OUT}" "${ACTOR_OUT}" "${DETAIL_OUT}" "${ACTOR_DETAIL_OUT}" <<'PY'
+python3 - "${OUT}" "${ACTOR_OUT}" "${DETAIL_OUT}" "${ACTOR_DETAIL_OUT}" "${HEALTH_OUT}" <<'PY'
 import json, sys, os
 
 meta = json.load(open(sys.argv[1]))
@@ -121,6 +132,13 @@ if os.path.exists(actor_detail_path) and os.path.getsize(actor_detail_path) > 0:
     check(isinstance(ad.get('id'), int), 'actor detail.id 类型异常（应为无包装演员对象）')
     check(isinstance(ad.get('name'), str), 'actor detail.name 类型异常')
     check(ad.get('aliases') is None or isinstance(ad.get('aliases'), list), 'actor detail.aliases 应为数组')
+
+# 健康检查断言（配置页"测试连接"探针）
+health_path = sys.argv[5]
+if os.path.exists(health_path) and os.path.getsize(health_path) > 0:
+    health = json.load(open(health_path))
+    check(health.get('status') == 'ok', 'health.status 应为 "ok"')
+    check(isinstance(health.get('version'), str), 'health.version 应为字符串')
 
 if errors:
     print('契约断言失败:')

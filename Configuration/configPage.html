@@ -15,11 +15,24 @@
                 <div class="inputContainer">
                     <label class="inputLabel inputLabelUnfocused" for="TimeoutSeconds">请求超时（秒）</label>
                     <input is="emby-input" type="number" id="TimeoutSeconds" min="1" max="120" />
+                    <div class="fieldDescription">单请求超时，冷门资源刮削慢时可调大（默认 5）</div>
+                </div>
+                <div class="inputContainer">
+                    <label class="inputLabel inputLabelUnfocused" for="MaxConcurrentRequests">最大并发请求数</label>
+                    <input is="emby-input" type="number" id="MaxConcurrentRequests" min="1" max="32" />
+                    <div class="fieldDescription">批量刮削时同时发往 Amane 的查询上限（默认 4，重启后生效）</div>
                 </div>
                 <div>
                     <button is="emby-button" type="submit" class="raised button-submit block emby-button">
                         <span>保存</span>
                     </button>
+                </div>
+                <div style="margin-top: 1.5em;">
+                    <button is="emby-button" type="button" id="TestConnection" class="raised block emby-button">
+                        <span>测试连接</span>
+                    </button>
+                    <div class="fieldDescription">按已保存的配置探活 Amane 并验证 Token，改动后请先保存再测试</div>
+                    <div id="TestConnectionResult" style="margin-top: 0.5em; display: none;"></div>
                 </div>
             </form>
         </div>
@@ -34,7 +47,8 @@
                 ApiClient.getPluginConfiguration(pluginId).then(function (config) {
                     page.querySelector('#ServerUrl').value = config.ServerUrl || 'http://127.0.0.1:18000';
                     page.querySelector('#ApiToken').value = config.ApiToken || '';
-                    page.querySelector('#TimeoutSeconds').value = config.TimeoutSeconds || 10;
+                    page.querySelector('#TimeoutSeconds').value = config.TimeoutSeconds || 5;
+                    page.querySelector('#MaxConcurrentRequests').value = config.MaxConcurrentRequests || 4;
                     Dashboard.hideLoadingMsg();
                 });
             });
@@ -45,10 +59,44 @@
                 ApiClient.getPluginConfiguration(pluginId).then(function (config) {
                     config.ServerUrl = page.querySelector('#ServerUrl').value.trim();
                     config.ApiToken = page.querySelector('#ApiToken').value.trim();
-                    config.TimeoutSeconds = parseInt(page.querySelector('#TimeoutSeconds').value, 10) || 10;
+                    config.TimeoutSeconds = parseInt(page.querySelector('#TimeoutSeconds').value, 10) || 5;
+                    config.MaxConcurrentRequests = parseInt(page.querySelector('#MaxConcurrentRequests').value, 10) || 4;
                     ApiClient.updatePluginConfiguration(pluginId, config).then(function (result) {
                         Dashboard.processPluginConfigurationUpdateResult(result);
                     });
+                });
+            });
+
+            page.querySelector('#TestConnection').addEventListener('click', function () {
+                const button = page.querySelector('#TestConnection');
+                const resultBox = page.querySelector('#TestConnectionResult');
+                button.disabled = true;
+                resultBox.style.display = 'block';
+                resultBox.style.color = '';
+                resultBox.textContent = '正在测试…';
+
+                ApiClient.getJSON(ApiClient.getUrl('Amane/Health')).then(function (result) {
+                    if (!result.Reachable) {
+                        resultBox.style.color = '#c62828';
+                        resultBox.textContent = '✗ 无法连接 Amane：' + (result.Error || '未知错误') + '（请检查服务地址与服务是否已启动）';
+                    } else if (result.AuthStatus === 'ok') {
+                        resultBox.style.color = '#2e7d32';
+                        resultBox.textContent = '✓ 连接正常 · Amane v' + (result.Version || '?') + ' · 延迟 ' + result.LatencyMs + 'ms · Token 鉴权通过';
+                    } else if (result.AuthStatus === 'unauthorized') {
+                        resultBox.style.color = '#c62828';
+                        resultBox.textContent = '✗ 服务可达（延迟 ' + result.LatencyMs + 'ms · v' + (result.Version || '?') + '），但 Token 鉴权失败，请检查 API Token';
+                    } else if (result.AuthStatus === 'notConfigured') {
+                        resultBox.style.color = '#ef6c00';
+                        resultBox.textContent = '△ 服务可达（延迟 ' + result.LatencyMs + 'ms · v' + (result.Version || '?') + '），但未配置 API Token，刮削请求会被拒绝';
+                    } else {
+                        resultBox.style.color = '#ef6c00';
+                        resultBox.textContent = '△ 服务可达（延迟 ' + result.LatencyMs + 'ms · v' + (result.Version || '?') + '），但鉴权状态未知';
+                    }
+                }).catch(function () {
+                    resultBox.style.color = '#c62828';
+                    resultBox.textContent = '✗ 测试请求失败，请查看 Jellyfin 日志';
+                }).finally(function () {
+                    button.disabled = false;
                 });
             });
         })();

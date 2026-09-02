@@ -47,7 +47,7 @@ public class AmanePersonProvider : IRemoteMetadataProvider<Person, PersonLookupI
         var actor = await _client.ResolveActorAsync(info.ProviderIds, info.Name, cancellationToken).ConfigureAwait(false);
         if (actor is null)
         {
-            _logger.LogDebug("Amane 演员未命中: {Name}", info.Name);
+            _logger.LogInformation("Amane 演员未识别: {Name}", info.Name);
             return result;
         }
 

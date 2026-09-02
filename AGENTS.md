@@ -24,9 +24,10 @@ AMANE_TOKEN=xxx ./scripts/probe-amane.sh [番号]                # T3 实时契�
 | 路径 | 职责 |
 |------|------|
 | `Plugin.cs` | `BasePlugin<PluginConfiguration>` + `IHasWebPages`，固定 GUID `9f2e4a6b-7c1d-4e3f-8a5b-0d9c2e1f4a7b` |
-| `Configuration/` | `PluginConfiguration`（ServerUrl/ApiToken/TimeoutSeconds）+ 内嵌 `configPage.html` |
-| `AmaneClient.cs` | 薄 HTTP 客户端：通用 `GetAsync<T>`、元数据/演员查询、演员 6 小时进程内缓存、`ResolveMetadataAsync`/`ResolveActorAsync` 统一 ID 解析；失败记日志返回空，**不抛异常** |
-| `AmaneModels.cs` | DTO（`AmaneMetadata`/`AmaneActor`/`AmaneMetadataDetailResponse`），`[JsonPropertyName]` 对齐 snake_case |
+| `Configuration/` | `PluginConfiguration`（ServerUrl/ApiToken/TimeoutSeconds/MaxConcurrentRequests）+ 内嵌 `configPage.html` |
+| `AmaneClient.cs` | 薄 HTTP 客户端：通用 `GetAsync<T>`、元数据/演员查询、演员 6 小时进程内缓存、`ResolveMetadataAsync`/`ResolveActorAsync` 统一 ID 解析、`CheckHealthAsync` 配置页探活；失败记日志返回空，**不抛异常**（外部取消除外，向上抛）。内置弹性：`SemaphoreSlim` 并发背压（默认 4）、每请求 linked CTS 显式超时（默认 5s，`HttpClient.Timeout` 多 5s 仅作兜底）、连续失败 5 次熔断 30s 快速失败；图片透传与健康检查不占信号量、不计熔断 |
+| `AmaneModels.cs` | DTO（`AmaneMetadata`/`AmaneActor`/`AmaneMetadataDetailResponse`/`AmaneHealthResponse`/`AmaneHealthCheckResult`），`[JsonPropertyName]` 对齐 snake_case |
+| `Api/AmaneDiagnosticsController.cs` | `[ApiController] [Route("Amane")] [Authorize]`：`GET /Amane/Health` 服务端探活（配置页"测试连接"按钮调用，避免浏览器直连的 CORS/Token 暴露） |
 | `Providers/AmaneMovieProvider.cs` | `IRemoteMetadataProvider<Movie, MovieInfo>`；标题格式 `番号 标题`；内联补演员头像并随 `PersonInfo.ProviderIds` 自动绑定演员 id；识别成功双键写入 `Amane`+`AmaneId` |
 | `Providers/AmaneMovieExternalId.cs` | `IExternalId`：影片识别框外部 ID（ProviderName 只写 "Amane"，Jellyfin 会自动拼 "Id" 后缀） |
 | `Providers/AmanePersonProvider.cs` | `IRemoteMetadataProvider<Person, PersonLookupInfo>`（演员头像/简介/生日）；`ResolveActorAsync` 解析，搜索返回前 5 候选 |
@@ -56,7 +57,8 @@ AMANE_TOKEN=xxx ./scripts/probe-amane.sh [番号]                # T3 实时契�
 - 元数据直取：`GET /api/metadata/{id}` → `{metadata, files, …}`（识别框填数字 id 时使用）。
 - 演员查询：`GET /api/actors?search={name}` → `ActorResponse`（`image_urls`/`birthday`/`overview` 等）；演员头像依赖 Amane 侧先刮削（`POST /api/actors/{id}/scrape`），未刮削的演员 `image_urls` 为空。
 - 演员直取：`GET /api/actors/{id}` → **无包装**直接返回演员对象（列表项不填简介/别名，详情全量含 `aliases`/`provider_ids`/`source_urls`）。
-- OpenAPI：`GET /openapi.json`（无需 token；`/api/openapi.json` 需 token）。
+- OpenAPI：`GET /openapi.json`（无需 token；`/api/openapi.json` 需 token——配置页"测试连接"用它验证 Token 有效性）。
+- 健康检查：`GET /api/health` → `{status, version}`，**无需 token**（错误 token 也返回 200），只证明服务可达，不能据此判断鉴权。
 - 关键字段名：`plot`（非 overview）、`release`、`tags`、`poster_url/thumb_url/extrafanart`、`actors` 为纯字符串数组；日文原标题从 `raw.<来源>.title` 提取。
 - 评分 `score` 为来源站 5 分制，插件 ×2 换算到 Jellyfin 10 分制。
 
@@ -66,7 +68,9 @@ AMANE_TOKEN=xxx ./scripts/probe-amane.sh [番号]                # T3 实时契�
 - 主项目在仓库根，`Microsoft.NET.Sdk` 默认通配会扫进 `tests/**/*.cs`——csproj 里已有 `Compile Remove`，新增测试目录时保持该排除。
 - 主项目 Jellyfin 包引用带 `PrivateAssets=all`，不传递给测试项目；测试项目需自行引用 `Jellyfin.Controller/Model`。
 - `IHttpClientFactory` 创建的 HttpClient 不要 `using` 释放；`GetImageAsync` 返回的响应流由 Jellyfin 读取，客户端内不得释放。
-- csproj 的 `InternalsVisibleTo` 向测试程序集开放 `internal` 成员（如 `MapToMovie`）。
+- csproj 的 `InternalsVisibleTo` 向测试程序集开放 `internal` 成员（如 `MapToMovie`、`AmaneClient` 测试构造函数）。
+- 弹性测试用 internal 构造函数注入并发/超时/熔断参数；`MaxConcurrentRequests` 在 `AmaneClient` 构造时读取，改配置需重启 Jellyfin 生效（`TimeoutSeconds` 为每请求读取，即时生效）。
+- 插件 API 控制器（`Api/`）依赖 csproj 的 `FrameworkReference Microsoft.AspNetCore.App`（不拷出程序集）；Jellyfin 自动注册插件程序集中的控制器，接口响应按 Jellyfin 默认 **PascalCase** 序列化，前端 JS 取字段注意大小写。
 
 ## 约定
 

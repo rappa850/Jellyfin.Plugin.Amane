@@ -18,7 +18,12 @@ public class PluginConfiguration : BasePluginConfiguration
     public string ApiToken { get; set; } = string.Empty;
 
     /// <summary>
-    /// Gets or sets the 单次 HTTP 请求超时时间（秒）。
+    /// Gets or sets the 单次 HTTP 请求超时时间（秒）。冷门资源 LLM 刮削较慢时可调大。
     /// </summary>
-    public int TimeoutSeconds { get; set; } = 10;
+    public int TimeoutSeconds { get; set; } = 5;
+
+    /// <summary>
+    /// Gets or sets the 同时发往 Amane 的元数据/演员查询最大并发数（图片下载不占额度）。
+    /// </summary>
+    public int MaxConcurrentRequests { get; set; } = 4;
 }

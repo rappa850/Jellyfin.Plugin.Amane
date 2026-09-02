@@ -27,6 +27,7 @@
     <None Include="..\..\Amane\amane-actor.sample.json" Link="amane-actor.sample.json" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\Amane\amane-detail.sample.json" Link="amane-detail.sample.json" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\Amane\amane-actor-detail.sample.json" Link="amane-actor-detail.sample.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\Amane\amane-health.sample.json" Link="amane-health.sample.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

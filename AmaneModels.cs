@@ -167,3 +167,40 @@ public sealed class AmaneMetadataDetailResponse
     [JsonPropertyName("metadata")]
     public AmaneMetadata? Metadata { get; set; }
 }
+
+
+/// <summary>
+/// Amane <c>GET /api/health</c> 的就绪探测响应（{status, version}，无需 token）。
+/// </summary>
+public sealed class AmaneHealthResponse
+{
+    /// <summary>Gets or sets the 服务状态（正常为 "ok"）。</summary>
+    [JsonPropertyName("status")]
+    public string? Status { get; set; }
+
+    /// <summary>Gets or sets the Amane 版本号。</summary>
+    [JsonPropertyName("version")]
+    public string? Version { get; set; }
+}
+
+
+/// <summary>
+/// 配置页"测试连接"的诊断结果：可达性、延迟、版本与 Token 鉴权状态。
+/// </summary>
+public sealed class AmaneHealthCheckResult
+{
+    /// <summary>Gets or sets a value indicating whether Amane 服务可达（/api/health 探活成功）。</summary>
+    public bool Reachable { get; set; }
+
+    /// <summary>Gets or sets the /api/health 往返延迟（毫秒）。</summary>
+    public long LatencyMs { get; set; }
+
+    /// <summary>Gets or sets the Amane 版本号（可达时）。</summary>
+    public string? Version { get; set; }
+
+    /// <summary>Gets or sets the Token 鉴权结论：ok / unauthorized / notConfigured / unknown。</summary>
+    public string AuthStatus { get; set; } = "unknown";
+
+    /// <summary>Gets or sets the 失败原因（不可达或异常时）。</summary>
+    public string? Error { get; set; }
+}
