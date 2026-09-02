@@ -43,12 +43,8 @@ public class AmanePersonProvider : IRemoteMetadataProvider<Person, PersonLookupI
     {
         var result = new MetadataResult<Person>();
 
-        if (string.IsNullOrWhiteSpace(info.Name))
-        {
-            return result;
-        }
-
-        var actor = await _client.LookupActorAsync(info.Name, cancellationToken).ConfigureAwait(false);
+        // 统一解析：Amane 外部 ID（数字直取/演员名）→ 名称兜底
+        var actor = await _client.ResolveActorAsync(info.ProviderIds, info.Name, cancellationToken).ConfigureAwait(false);
         if (actor is null)
         {
             _logger.LogDebug("Amane 演员未命中: {Name}", info.Name);
@@ -87,26 +83,44 @@ public class AmanePersonProvider : IRemoteMetadataProvider<Person, PersonLookupI
     /// <inheritdoc />
     public async Task<IEnumerable<RemoteSearchResult>> GetSearchResults(PersonLookupInfo searchInfo, CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(searchInfo.Name))
+        // 外部 ID 框值容忍 "Amane:" 前缀；数字 id 精确直取，只回一个结果
+        var amaneValue = AmaneClient.NormalizeIdValue(
+            searchInfo.ProviderIds.TryGetValue(AmaneMovieProvider.ProviderIdName, out var raw) ? raw : null);
+
+        if (AmaneClient.TryParseInternalId(amaneValue, out var internalId))
+        {
+            var byId = await _client.GetActorByIdAsync(internalId, cancellationToken).ConfigureAwait(false);
+            if (byId is not null)
+            {
+                return new[] { ToSearchResult(byId, searchInfo.Name) };
+            }
+        }
+
+        var query = !string.IsNullOrWhiteSpace(amaneValue) ? amaneValue : searchInfo.Name;
+        if (string.IsNullOrWhiteSpace(query))
         {
             return Enumerable.Empty<RemoteSearchResult>();
         }
 
-        var actor = await _client.LookupActorAsync(searchInfo.Name, cancellationToken).ConfigureAwait(false);
-        if (actor is null)
-        {
-            return Enumerable.Empty<RemoteSearchResult>();
-        }
+        var actors = await _client.SearchActorsAsync(query, 5, cancellationToken).ConfigureAwait(false);
+        return actors.Select(actor => ToSearchResult(actor, searchInfo.Name));
+    }
 
+    private RemoteSearchResult ToSearchResult(AmaneActor actor, string? fallbackName)
+    {
         var searchResult = new RemoteSearchResult
         {
-            Name = actor.Name ?? searchInfo.Name,
+            Name = actor.Name ?? fallbackName ?? string.Empty,
             SearchProviderName = Name,
             ImageUrl = actor.ImageUrls?.FirstOrDefault()
         };
-        searchResult.ProviderIds[AmaneMovieProvider.ProviderIdName] = actor.Id.ToString(CultureInfo.InvariantCulture);
 
-        return new[] { searchResult };
+        if (actor.Id > 0)
+        {
+            searchResult.ProviderIds[AmaneMovieProvider.ProviderIdName] = actor.Id.ToString(CultureInfo.InvariantCulture);
+        }
+
+        return searchResult;
     }
 
     /// <inheritdoc />

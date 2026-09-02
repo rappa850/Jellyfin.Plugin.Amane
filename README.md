@@ -43,6 +43,8 @@ dotnet build -c Release
 
 识别成功后自动写入两个键：`Amane`（番号，稳定可读）与 `AmaneId`（内部数字 id，后续刷新的快速路径；Amane 库重建导致 id 失效时自动回退番号搜索）。
 
+演员（Person）同样支持绑定：影片入库时演员自动携带 Amane 演员 id（同名演员不再混淆）；也可在人物"编辑元数据"对话框的 External IDs 区手动填写，支持数字 id（精确直取）或演员名（走搜索）。
+
 ## 测试
 
 ```bash

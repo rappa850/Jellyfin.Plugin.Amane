@@ -163,15 +163,102 @@ public sealed class AmaneClient
             return cached.Actor;
         }
 
-        var list = await GetAsync<AmaneActorListResponse>(
-            $"/api/actors?search={Uri.EscapeDataString(name)}&limit=5",
-            cancellationToken).ConfigureAwait(false);
+        var items = await SearchActorsAsync(name, 5, cancellationToken).ConfigureAwait(false);
 
-        var actor = list?.Items.FirstOrDefault(a => string.Equals(a.Name, name, StringComparison.Ordinal))
-                    ?? list?.Items.FirstOrDefault();
+        var actor = items.FirstOrDefault(a => string.Equals(a.Name, name, StringComparison.Ordinal))
+                    ?? items.FirstOrDefault();
 
-        _actorCache[name] = (actor, DateTimeOffset.UtcNow.Add(ActorCacheTtl));
+        CacheActor(name, actor);
         return actor;
+    }
+
+    /// <summary>
+    /// 按演员名检索演员列表。
+    /// </summary>
+    /// <param name="name">演员名。</param>
+    /// <param name="limit">最大返回条数。</param>
+    /// <param name="cancellationToken">取消令牌。</param>
+    /// <returns>命中演员列表；出错或未命中为空列表。</returns>
+    public async Task<IReadOnlyList<AmaneActor>> SearchActorsAsync(string name, int limit, CancellationToken cancellationToken)
+    {
+        var list = await GetAsync<AmaneActorListResponse>(
+            $"/api/actors?search={Uri.EscapeDataString(name)}&limit={limit}",
+            cancellationToken).ConfigureAwait(false);
+        return list?.Items ?? (IReadOnlyList<AmaneActor>)Array.Empty<AmaneActor>();
+    }
+
+    /// <summary>
+    /// 按 Amane 内部整数 id 直取演员（演员外部 ID 绑定时使用）。
+    /// </summary>
+    /// <param name="id">Amane 演员 id。</param>
+    /// <param name="cancellationToken">取消令牌。</param>
+    /// <returns>命中演员；未命中或出错为 null。</returns>
+    public async Task<AmaneActor?> GetActorByIdAsync(int id, CancellationToken cancellationToken)
+    {
+        var cacheKey = "id:" + id.ToString(CultureInfo.InvariantCulture);
+        if (_actorCache.TryGetValue(cacheKey, out var cached) && cached.ExpiresAt > DateTimeOffset.UtcNow)
+        {
+            return cached.Actor;
+        }
+
+        // 详情端点直接返回演员对象（无包装），实测契约见 AGENTS.md
+        var actor = await GetAsync<AmaneActor>($"/api/actors/{id}", cancellationToken).ConfigureAwait(false);
+        CacheActor(cacheKey, actor);
+        return actor;
+    }
+
+    /// <summary>
+    /// 统一解析演员：ProviderIds["Amane"] 数字 id 直取 → 框内名字搜索 → 条目名兜底；id 失效自动回退名字。
+    /// </summary>
+    /// <param name="providerIds">条目的 ProviderIds。</param>
+    /// <param name="name">条目名称（兜底搜索词）。</param>
+    /// <param name="cancellationToken">取消令牌。</param>
+    /// <returns>命中演员；未命中为 null。</returns>
+    public async Task<AmaneActor?> ResolveActorAsync(
+        IReadOnlyDictionary<string, string> providerIds,
+        string? name,
+        CancellationToken cancellationToken)
+    {
+        // 外部 ID 框值（容忍 "Amane:" 前缀）：数字 id 直取，演员名搜索
+        var amaneValue = NormalizeIdValue(providerIds.TryGetValue(Providers.AmaneMovieProvider.ProviderIdName, out var raw) ? raw : null);
+        if (!string.IsNullOrWhiteSpace(amaneValue))
+        {
+            if (TryParseInternalId(amaneValue, out var id))
+            {
+                var byId = await GetActorByIdAsync(id, cancellationToken).ConfigureAwait(false);
+                if (byId is not null)
+                {
+                    return byId;
+                }
+
+                // id 失效（如 Amane 库重建）：落到名字兜底
+            }
+            else
+            {
+                return await LookupActorAsync(amaneValue, cancellationToken).ConfigureAwait(false);
+            }
+        }
+
+        return string.IsNullOrWhiteSpace(name)
+            ? null
+            : await LookupActorAsync(name, cancellationToken).ConfigureAwait(false);
+    }
+
+    private void CacheActor(string key, AmaneActor? actor)
+    {
+        _actorCache[key] = (actor, DateTimeOffset.UtcNow.Add(ActorCacheTtl));
+        if (actor is not null)
+        {
+            if (!string.IsNullOrWhiteSpace(actor.Name))
+            {
+                _actorCache[actor.Name] = (actor, DateTimeOffset.UtcNow.Add(ActorCacheTtl));
+            }
+
+            if (actor.Id > 0)
+            {
+                _actorCache["id:" + actor.Id.ToString(CultureInfo.InvariantCulture)] = (actor, DateTimeOffset.UtcNow.Add(ActorCacheTtl));
+            }
+        }
     }
 
     /// <summary>

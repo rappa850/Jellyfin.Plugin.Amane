@@ -25,11 +25,12 @@ AMANE_TOKEN=xxx ./scripts/probe-amane.sh [番号]                # T3 实时契�
 |------|------|
 | `Plugin.cs` | `BasePlugin<PluginConfiguration>` + `IHasWebPages`，固定 GUID `9f2e4a6b-7c1d-4e3f-8a5b-0d9c2e1f4a7b` |
 | `Configuration/` | `PluginConfiguration`（ServerUrl/ApiToken/TimeoutSeconds）+ 内嵌 `configPage.html` |
-| `AmaneClient.cs` | 薄 HTTP 客户端：通用 `GetAsync<T>`、元数据/演员查询、演员 6 小时进程内缓存、`ResolveMetadataAsync` 统一 ID 解析；失败记日志返回空，**不抛异常** |
+| `AmaneClient.cs` | 薄 HTTP 客户端：通用 `GetAsync<T>`、元数据/演员查询、演员 6 小时进程内缓存、`ResolveMetadataAsync`/`ResolveActorAsync` 统一 ID 解析；失败记日志返回空，**不抛异常** |
 | `AmaneModels.cs` | DTO（`AmaneMetadata`/`AmaneActor`/`AmaneMetadataDetailResponse`），`[JsonPropertyName]` 对齐 snake_case |
-| `Providers/AmaneMovieProvider.cs` | `IRemoteMetadataProvider<Movie, MovieInfo>`；标题格式 `番号 标题`；内联补演员头像；识别成功双键写入 `Amane`+`AmaneId` |
-| `Providers/AmaneMovieExternalId.cs` | `IExternalId`：识别框外部 ID（ProviderName 只写 "Amane"，Jellyfin 会自动拼 "Id" 后缀） |
-| `Providers/AmanePersonProvider.cs` | `IRemoteMetadataProvider<Person, PersonLookupInfo>`（演员头像/简介/生日） |
+| `Providers/AmaneMovieProvider.cs` | `IRemoteMetadataProvider<Movie, MovieInfo>`；标题格式 `番号 标题`；内联补演员头像并随 `PersonInfo.ProviderIds` 自动绑定演员 id；识别成功双键写入 `Amane`+`AmaneId` |
+| `Providers/AmaneMovieExternalId.cs` | `IExternalId`：影片识别框外部 ID（ProviderName 只写 "Amane"，Jellyfin 会自动拼 "Id" 后缀） |
+| `Providers/AmanePersonProvider.cs` | `IRemoteMetadataProvider<Person, PersonLookupInfo>`（演员头像/简介/生日）；`ResolveActorAsync` 解析，搜索返回前 5 候选 |
+| `Providers/AmanePersonExternalId.cs` | `IExternalId`（Type=Person）：人物编辑框外部 ID；Person 无识别对话框，手动绑定入口在"编辑元数据"External IDs 区 |
 | `Providers/AmaneImageProvider.cs` | `IRemoteImageProvider`：`poster_url`→Primary，`thumb_url`+`extrafanart`→Backdrop |
 | `ServiceRegistrator.cs` | `IPluginServiceRegistrator` 注册 `AmaneClient` 单例 |
 | `Amane/*.sample.json` | 真实 API 响应样本（探针保存），单测的数据源 |
@@ -42,9 +43,11 @@ AMANE_TOKEN=xxx ./scripts/probe-amane.sh [番号]                # T3 实时契�
 
 ## ID 绑定设计
 
-- 双键存储：`Amane`（番号，稳定可读，识别框显示值）+ `AmaneId`（内部数字 id，精确直取快速路径）。
-- 识别框输入容忍 `Amane:` 前缀（大小写不敏感，自动剥离）；数字走 `GET /api/metadata/{id}` 直取，否则按番号搜索。
-- 解析统一收口在 `AmaneClient.ResolveMetadataAsync`：AmaneId 直取 → 识别框值 → 名称兜底；数字 id 失效自动回退番号。
+- 影片双键存储：`Amane`（番号，稳定可读，识别框显示值）+ `AmaneId`（内部数字 id，精确直取快速路径）。
+- 演员单键存储：`Amane`（数字 id；演员无番号类可读标识，名字会撞名）；影片入库时随 `PersonInfo.ProviderIds` 自动写入。
+- 识别框/编辑框输入容忍 `Amane:` 前缀（大小写不敏感，自动剥离）；数字走 `GET /api/metadata/{id}` 或 `GET /api/actors/{id}` 直取，否则按番号/演员名搜索。
+- 解析统一收口在 `AmaneClient.ResolveMetadataAsync`（影片：AmaneId 直取 → 识别框值 → 名称兜底）与 `ResolveActorAsync`（演员：Amane 值数字直取/名字搜索 → 名称兜底）；数字 id 失效自动回退。
+- 演员缓存同时按名字与 `id:N` 双键写入（`CacheActor`），任一入口命中都回填另一键。
 
 ## Amane API 契约要点（实测 v0.6.2）
 
@@ -52,6 +55,7 @@ AMANE_TOKEN=xxx ./scripts/probe-amane.sh [番号]                # T3 实时契�
 - 元数据查询：`GET /api/metadata?search={q}&limit=n` → `{items: [MetadataResponse], total}`，**列表项即完整详情**，无需二次请求。
 - 元数据直取：`GET /api/metadata/{id}` → `{metadata, files, …}`（识别框填数字 id 时使用）。
 - 演员查询：`GET /api/actors?search={name}` → `ActorResponse`（`image_urls`/`birthday`/`overview` 等）；演员头像依赖 Amane 侧先刮削（`POST /api/actors/{id}/scrape`），未刮削的演员 `image_urls` 为空。
+- 演员直取：`GET /api/actors/{id}` → **无包装**直接返回演员对象（列表项不填简介/别名，详情全量含 `aliases`/`provider_ids`/`source_urls`）。
 - OpenAPI：`GET /openapi.json`（无需 token；`/api/openapi.json` 需 token）。
 - 关键字段名：`plot`（非 overview）、`release`、`tags`、`poster_url/thumb_url/extrafanart`、`actors` 为纯字符串数组；日文原标题从 `raw.<来源>.title` 提取。
 - 评分 `score` 为来源站 5 分制，插件 ×2 换算到 Jellyfin 10 分制。
