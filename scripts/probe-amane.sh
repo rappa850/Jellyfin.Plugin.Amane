@@ -43,9 +43,23 @@ curl -sS -m 15 --get \
 python3 -m json.tool --no-ensure-ascii "${ACTOR_OUT}" > /dev/null
 echo "已保存到 ${ACTOR_OUT}"
 
+# 详情接口采样：取搜索结果首条的内部 id 直取（对应 "Amane 电影 Id" 绑定）
+DETAIL_OUT="$(dirname "${OUT}")/amane-detail.sample.json"
+DETAIL_ID=$(python3 -c "import json; d=json.load(open('${OUT}')); print(d['items'][0]['id'] if d['items'] else '')")
+
+if [[ -n "${DETAIL_ID}" ]]; then
+  echo "GET ${AMANE_URL}/api/metadata/${DETAIL_ID}"
+  curl -sS -m 15 \
+    -H "Authorization: Bearer ${AMANE_TOKEN}" \
+    "${AMANE_URL}/api/metadata/${DETAIL_ID}" \
+    -o "${DETAIL_OUT}" -w 'HTTP %{http_code}\n'
+  python3 -m json.tool --no-ensure-ascii "${DETAIL_OUT}" > /dev/null
+  echo "已保存到 ${DETAIL_OUT}"
+fi
+
 # T3 实时契约断言：字段缺失/类型漂移时非零退出
-python3 - "${OUT}" "${ACTOR_OUT}" <<'PY'
-import json, sys
+python3 - "${OUT}" "${ACTOR_OUT}" "${DETAIL_OUT}" <<'PY'
+import json, sys, os
 
 meta = json.load(open(sys.argv[1]))
 actor = json.load(open(sys.argv[2]))
@@ -76,6 +90,15 @@ if actor['items']:
     check(isinstance(a.get('name'), str), 'actor.name 类型异常')
     check(isinstance(a.get('id'), int), 'actor.id 类型异常')
     check(isinstance(a.get('image_urls'), list), 'actor.image_urls 应为数组')
+
+# 详情接口断言（若已采样）
+detail_path = sys.argv[3]
+if os.path.exists(detail_path) and os.path.getsize(detail_path) > 0:
+    detail = json.load(open(detail_path))
+    check(isinstance(detail.get('metadata'), dict), 'detail 响应缺少 metadata 对象')
+    if isinstance(detail.get('metadata'), dict):
+        check(isinstance(detail['metadata'].get('number'), str), 'detail.metadata.number 类型异常')
+        check(isinstance(detail['metadata'].get('id'), int), 'detail.metadata.id 类型异常')
 
 if errors:
     print('契约断言失败:')

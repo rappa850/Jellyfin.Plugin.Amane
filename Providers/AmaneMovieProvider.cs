@@ -25,6 +25,11 @@ public class AmaneMovieProvider : IRemoteMetadataProvider<Movie, MovieInfo>, IHa
     /// </summary>
     public const string ProviderIdName = "Amane";
 
+    /// <summary>
+    /// Amane 内部数字 id 在 Jellyfin ProviderIds 中的键名（识别成功后自动写入，用于精确直取）。
+    /// </summary>
+    public const string InternalIdProviderIdName = "AmaneId";
+
     private readonly AmaneClient _client;
     private readonly ILogger<AmaneMovieProvider> _logger;
 
@@ -56,19 +61,11 @@ public class AmaneMovieProvider : IRemoteMetadataProvider<Movie, MovieInfo>, IHa
     {
         var result = new MetadataResult<Movie>();
 
-        var query = info.ProviderIds.TryGetValue(ProviderIdName, out var number) && !string.IsNullOrWhiteSpace(number)
-            ? number
-            : info.Name;
-
-        if (string.IsNullOrWhiteSpace(query))
-        {
-            return result;
-        }
-
-        var metadata = await _client.LookupAsync(query, cancellationToken).ConfigureAwait(false);
+        // 统一解析：AmaneId 数字直取 → 识别框值（番号/数字/带前缀）→ 名称兜底
+        var metadata = await _client.ResolveMetadataAsync(info.ProviderIds, info.Name, cancellationToken).ConfigureAwait(false);
         if (metadata is null)
         {
-            _logger.LogDebug("Amane 未命中: {Query}", query);
+            _logger.LogDebug("Amane 未命中: {Name}", info.Name);
             return result;
         }
 
@@ -99,9 +96,20 @@ public class AmaneMovieProvider : IRemoteMetadataProvider<Movie, MovieInfo>, IHa
     /// <inheritdoc />
     public async Task<IEnumerable<RemoteSearchResult>> GetSearchResults(MovieInfo searchInfo, CancellationToken cancellationToken)
     {
-        var query = searchInfo.ProviderIds.TryGetValue(ProviderIdName, out var number) && !string.IsNullOrWhiteSpace(number)
-            ? number
-            : searchInfo.Name;
+        // 识别框值容忍 "Amane:" 前缀；数字 id 精确直取，只回一个结果
+        var amaneValue = AmaneClient.NormalizeIdValue(
+            searchInfo.ProviderIds.TryGetValue(ProviderIdName, out var raw) ? raw : null);
+
+        if (AmaneClient.TryParseInternalId(amaneValue, out var internalId))
+        {
+            var byId = await _client.GetByIdAsync(internalId, cancellationToken).ConfigureAwait(false);
+            if (byId is not null)
+            {
+                return new[] { ToSearchResult(byId) };
+            }
+        }
+
+        var query = !string.IsNullOrWhiteSpace(amaneValue) ? amaneValue : searchInfo.Name;
 
         if (string.IsNullOrWhiteSpace(query))
         {
@@ -109,34 +117,44 @@ public class AmaneMovieProvider : IRemoteMetadataProvider<Movie, MovieInfo>, IHa
         }
 
         var items = await _client.SearchAsync(query, 10, cancellationToken).ConfigureAwait(false);
-        return items.Select(item =>
+        return items.Select(ToSearchResult);
+    }
+
+    private RemoteSearchResult ToSearchResult(AmaneMetadata item)
+    {
+        var searchResult = new RemoteSearchResult
         {
-            var searchResult = new RemoteSearchResult
-            {
-                Name = item.Title ?? item.Number ?? string.Empty,
-                SearchProviderName = Name,
-                ImageUrl = item.PosterUrl
-            };
+            Name = item.Title ?? item.Number ?? string.Empty,
+            SearchProviderName = Name,
+            ImageUrl = item.PosterUrl
+        };
 
-            if (DateTime.TryParse(item.Release, CultureInfo.InvariantCulture, DateTimeStyles.None, out var releaseDate))
-            {
-                searchResult.ProductionYear = releaseDate.Year;
-            }
+        if (DateTime.TryParse(item.Release, CultureInfo.InvariantCulture, DateTimeStyles.None, out var releaseDate))
+        {
+            searchResult.ProductionYear = releaseDate.Year;
+        }
 
-            if (!string.IsNullOrWhiteSpace(item.Number))
-            {
-                searchResult.ProviderIds[ProviderIdName] = item.Number;
-            }
+        if (!string.IsNullOrWhiteSpace(item.Number))
+        {
+            searchResult.ProviderIds[ProviderIdName] = item.Number;
+        }
 
-            return searchResult;
-        });
+        if (item.Id > 0)
+        {
+            searchResult.ProviderIds[InternalIdProviderIdName] = item.Id.ToString(CultureInfo.InvariantCulture);
+        }
+
+        return searchResult;
     }
 
     internal static Movie MapToMovie(AmaneMetadata metadata)
     {
         var movie = new Movie
         {
-            Name = metadata.Title ?? metadata.Number,
+            // 标题格式：番号 + 空格 + 润色标题，如 "IPZZ-822 纯真可怜的…"
+            Name = !string.IsNullOrWhiteSpace(metadata.Number) && !string.IsNullOrWhiteSpace(metadata.Title)
+                ? $"{metadata.Number} {metadata.Title}"
+                : metadata.Title ?? metadata.Number,
             OriginalTitle = metadata.GetOriginalTitle(),
             Overview = metadata.Plot
         };
@@ -168,9 +186,15 @@ public class AmaneMovieProvider : IRemoteMetadataProvider<Movie, MovieInfo>, IHa
             movie.CommunityRating = Math.Min(metadata.Score.Value * 2f, 10f);
         }
 
+        // 双键存储：番号（稳定可读，识别框显示值）+ 内部数字 id（精确直取快速路径）
         if (!string.IsNullOrWhiteSpace(metadata.Number))
         {
             movie.SetProviderId(ProviderIdName, metadata.Number);
+        }
+
+        if (metadata.Id > 0)
+        {
+            movie.SetProviderId(InternalIdProviderIdName, metadata.Id.ToString(CultureInfo.InvariantCulture));
         }
 
         return movie;

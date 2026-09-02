@@ -18,9 +18,10 @@ Amane 后端已完成文件名清洗、番号提取、PostgreSQL 离线库检索
 
 ## 功能
 
-- 影片元数据提供器（Movie）：搜索结果与详情映射，内联补充演员头像
+- 影片元数据提供器（Movie）：搜索结果与详情映射，标题格式为 `番号 标题`，内联补充演员头像
 - 人物元数据提供器（Person）：演员头像、简介、生日
 - 图片提供器：`poster_url` → 封面，`thumb_url` + `extrafanart` → 背景图
+- 识别框 "Amane" 外部 ID：支持番号或 Amane 内部数字 id 精确绑定
 - 配置页：Amane 服务地址、API Token、请求超时
 
 ## 构建与部署
@@ -30,6 +31,17 @@ dotnet build -c Release
 ```
 
 将 `bin/Release/net9.0/` 下所有 dll 复制到 Jellyfin 数据目录 `plugins/Amane/`，重启 Jellyfin 后在插件配置页填入 Amane 地址与 API Token，并在媒体库的元数据/图片下载器中启用 "Amane"。
+
+也可以通过 Jellyfin 插件仓库订阅安装/更新（推荐）：
+
+1. 仪表盘 → 插件 → 存储库 → 添加：`https://raw.githubusercontent.com/rappa850/Jellyfin.Plugin.Amane/main/manifest.json`
+2. 在目录中找到 "Amane" 安装；之后打 `v*` tag 会触发 GitHub Actions 自动构建、发布 Release 并更新 manifest，Jellyfin 侧即可看到更新提示。
+
+## 识别与 ID 绑定
+
+影片"识别"对话框含 **Amane** 外部 ID 输入框，支持三种填法：`Amane:IPZZ-822`、`IPZZ-822`（番号搜索）、`22`（Amane 内部数字 id，精确直取）。
+
+识别成功后自动写入两个键：`Amane`（番号，稳定可读）与 `AmaneId`（内部数字 id，后续刷新的快速路径；Amane 库重建导致 id 失效时自动回退番号搜索）。
 
 ## 测试
 

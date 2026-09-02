@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -65,6 +66,88 @@ public sealed class AmaneClient
             $"/api/metadata?search={Uri.EscapeDataString(query)}&limit={limit}",
             cancellationToken).ConfigureAwait(false);
         return list?.Items ?? (IReadOnlyList<AmaneMetadata>)Array.Empty<AmaneMetadata>();
+    }
+
+    /// <summary>
+    /// 按 Amane 内部整数 id 直取元数据（识别对话框绑定"Amane 电影 Id"时使用）。
+    /// </summary>
+    /// <param name="id">Amane 内部 id。</param>
+    /// <param name="cancellationToken">取消令牌。</param>
+    /// <returns>命中条目；未命中或出错为 null。</returns>
+    public async Task<AmaneMetadata?> GetByIdAsync(int id, CancellationToken cancellationToken)
+    {
+        var detail = await GetAsync<AmaneMetadataDetailResponse>($"/api/metadata/{id}", cancellationToken).ConfigureAwait(false);
+        return detail?.Metadata;
+    }
+
+    /// <summary>
+    /// 统一解析元数据：按 ProviderIds 中的 Amane 键值逐级精确化，最终回退到名称搜索。
+    /// 键设计：<c>AmaneId</c>（内部数字 id，精确直取）→ <c>Amane</c>（识别框值：Amane:番号 / 番号 / 数字 id）→ name 搜索。
+    /// </summary>
+    /// <param name="providerIds">条目的 ProviderIds。</param>
+    /// <param name="name">条目名称（兜底搜索词）。</param>
+    /// <param name="cancellationToken">取消令牌。</param>
+    /// <returns>命中条目；未命中为 null。</returns>
+    public async Task<AmaneMetadata?> ResolveMetadataAsync(
+        IReadOnlyDictionary<string, string> providerIds,
+        string? name,
+        CancellationToken cancellationToken)
+    {
+        // 1. 内部数字 id（识别成功后自动写入，最快路径）
+        if (providerIds.TryGetValue(Providers.AmaneMovieProvider.InternalIdProviderIdName, out var internalIdValue)
+            && TryParseInternalId(internalIdValue, out var storedId))
+        {
+            var byStoredId = await GetByIdAsync(storedId, cancellationToken).ConfigureAwait(false);
+            if (byStoredId is not null)
+            {
+                return byStoredId;
+            }
+        }
+
+        // 2. 识别框值（容忍 "Amane:" 前缀）：数字直取，番号搜索
+        var amaneValue = NormalizeIdValue(providerIds.TryGetValue(Providers.AmaneMovieProvider.ProviderIdName, out var raw) ? raw : null);
+        if (!string.IsNullOrWhiteSpace(amaneValue))
+        {
+            if (TryParseInternalId(amaneValue, out var parsedId))
+            {
+                var byId = await GetByIdAsync(parsedId, cancellationToken).ConfigureAwait(false);
+                if (byId is not null)
+                {
+                    return byId;
+                }
+            }
+
+            return await LookupAsync(amaneValue, cancellationToken).ConfigureAwait(false);
+        }
+
+        // 3. 名称兜底
+        return string.IsNullOrWhiteSpace(name)
+            ? null
+            : await LookupAsync(name, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// 规范化识别框输入：剥离 "Amane:" 前缀（大小写不敏感）并裁剪空白。
+    /// </summary>
+    internal static string? NormalizeIdValue(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
+
+        var trimmed = value.Trim();
+        return trimmed.StartsWith("Amane:", StringComparison.OrdinalIgnoreCase)
+            ? trimmed["Amane:".Length..].Trim()
+            : trimmed;
+    }
+
+    /// <summary>
+    /// 尝试把 ProviderIds 中的 Amane 值解析为内部整数 id（识别框允许填数字 id 或番号）。
+    /// </summary>
+    internal static bool TryParseInternalId(string? value, out int id)
+    {
+        return int.TryParse(value, NumberStyles.None, CultureInfo.InvariantCulture, out id) && id > 0;
     }
 
     /// <summary>

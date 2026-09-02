@@ -156,3 +156,14 @@ public sealed class AmaneActor
     [JsonPropertyName("image_urls")]
     public List<string>? ImageUrls { get; set; }
 }
+
+
+/// <summary>
+/// Amane <c>GET /api/metadata/{id}</c> 的详情响应（{metadata, files, …}）。
+/// </summary>
+public sealed class AmaneMetadataDetailResponse
+{
+    /// <summary>Gets or sets the 元数据主体。</summary>
+    [JsonPropertyName("metadata")]
+    public AmaneMetadata? Metadata { get; set; }
+}

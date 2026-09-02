@@ -25,21 +25,32 @@ AMANE_TOKEN=xxx ./scripts/probe-amane.sh [番号]                # T3 实时契�
 |------|------|
 | `Plugin.cs` | `BasePlugin<PluginConfiguration>` + `IHasWebPages`，固定 GUID `9f2e4a6b-7c1d-4e3f-8a5b-0d9c2e1f4a7b` |
 | `Configuration/` | `PluginConfiguration`（ServerUrl/ApiToken/TimeoutSeconds）+ 内嵌 `configPage.html` |
-| `AmaneClient.cs` | 薄 HTTP 客户端：通用 `GetAsync<T>`、元数据/演员查询、演员 6 小时进程内缓存；失败记日志返回空，**不抛异常** |
-| `AmaneModels.cs` | DTO（`AmaneMetadata`/`AmaneActor`），`[JsonPropertyName]` 对齐 snake_case |
-| `Providers/AmaneMovieProvider.cs` | `IRemoteMetadataProvider<Movie, MovieInfo>`；内联补演员头像 |
+| `AmaneClient.cs` | 薄 HTTP 客户端：通用 `GetAsync<T>`、元数据/演员查询、演员 6 小时进程内缓存、`ResolveMetadataAsync` 统一 ID 解析；失败记日志返回空，**不抛异常** |
+| `AmaneModels.cs` | DTO（`AmaneMetadata`/`AmaneActor`/`AmaneMetadataDetailResponse`），`[JsonPropertyName]` 对齐 snake_case |
+| `Providers/AmaneMovieProvider.cs` | `IRemoteMetadataProvider<Movie, MovieInfo>`；标题格式 `番号 标题`；内联补演员头像；识别成功双键写入 `Amane`+`AmaneId` |
+| `Providers/AmaneMovieExternalId.cs` | `IExternalId`：识别框外部 ID（ProviderName 只写 "Amane"，Jellyfin 会自动拼 "Id" 后缀） |
 | `Providers/AmanePersonProvider.cs` | `IRemoteMetadataProvider<Person, PersonLookupInfo>`（演员头像/简介/生日） |
 | `Providers/AmaneImageProvider.cs` | `IRemoteImageProvider`：`poster_url`→Primary，`thumb_url`+`extrafanart`→Backdrop |
 | `ServiceRegistrator.cs` | `IPluginServiceRegistrator` 注册 `AmaneClient` 单例 |
 | `Amane/*.sample.json` | 真实 API 响应样本（探针保存），单测的数据源 |
 | `Amane/api.md` | Amane 作者提供的 API 层文档 |
 | `scripts/probe-amane.sh` | 探针：采样 + 契约断言，schema 漂移时非零退出 |
+| `scripts/build-release.sh` | 本地打包：Release 编译 + zip + md5 |
+| `manifest.json` | Jellyfin 可订阅的仓库清单；versions 由 CI 在打 tag 时自动追加 |
+| `.github/workflows/release.yml` | 打 `v*` tag 触发：构建 → zip → GitHub Release → 更新 manifest.json 回 main |
 | `tests/` | xunit 单测（契约反序列化 + 字段映射） |
+
+## ID 绑定设计
+
+- 双键存储：`Amane`（番号，稳定可读，识别框显示值）+ `AmaneId`（内部数字 id，精确直取快速路径）。
+- 识别框输入容忍 `Amane:` 前缀（大小写不敏感，自动剥离）；数字走 `GET /api/metadata/{id}` 直取，否则按番号搜索。
+- 解析统一收口在 `AmaneClient.ResolveMetadataAsync`：AmaneId 直取 → 识别框值 → 名称兜底；数字 id 失效自动回退番号。
 
 ## Amane API 契约要点（实测 v0.6.2）
 
 - 鉴权：`Authorization: Bearer <token>`，token 在插件配置页填。其余 header 形态（X-API-Token 等）均 401。
 - 元数据查询：`GET /api/metadata?search={q}&limit=n` → `{items: [MetadataResponse], total}`，**列表项即完整详情**，无需二次请求。
+- 元数据直取：`GET /api/metadata/{id}` → `{metadata, files, …}`（识别框填数字 id 时使用）。
 - 演员查询：`GET /api/actors?search={name}` → `ActorResponse`（`image_urls`/`birthday`/`overview` 等）；演员头像依赖 Amane 侧先刮削（`POST /api/actors/{id}/scrape`），未刮削的演员 `image_urls` 为空。
 - OpenAPI：`GET /openapi.json`（无需 token；`/api/openapi.json` 需 token）。
 - 关键字段名：`plot`（非 overview）、`release`、`tags`、`poster_url/thumb_url/extrafanart`、`actors` 为纯字符串数组；日文原标题从 `raw.<来源>.title` 提取。

@@ -45,16 +45,8 @@ public class AmaneImageProvider : IRemoteImageProvider, IHasOrder
     /// <inheritdoc />
     public async Task<IEnumerable<RemoteImageInfo>> GetImages(BaseItem item, CancellationToken cancellationToken)
     {
-        var query = item.ProviderIds.TryGetValue(AmaneMovieProvider.ProviderIdName, out var number) && !string.IsNullOrWhiteSpace(number)
-            ? number
-            : item.Name;
-
-        if (string.IsNullOrWhiteSpace(query))
-        {
-            return Enumerable.Empty<RemoteImageInfo>();
-        }
-
-        var metadata = await _client.LookupAsync(query, cancellationToken).ConfigureAwait(false);
+        // 统一解析：AmaneId 数字直取 → 识别框值（番号/数字/带前缀）→ 名称兜底
+        var metadata = await _client.ResolveMetadataAsync(item.ProviderIds, item.Name, cancellationToken).ConfigureAwait(false);
         if (metadata is null)
         {
             return Enumerable.Empty<RemoteImageInfo>();

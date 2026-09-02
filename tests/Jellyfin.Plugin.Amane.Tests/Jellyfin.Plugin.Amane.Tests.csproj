@@ -25,6 +25,7 @@
     <!-- 真实 API 响应样本，随测试输出目录拷贝 -->
     <None Include="..\..\Amane\amane-response.sample.json" Link="amane-response.sample.json" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\Amane\amane-actor.sample.json" Link="amane-actor.sample.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\Amane\amane-detail.sample.json" Link="amane-detail.sample.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

@@ -43,6 +43,15 @@ public class MovieMappingTests
 
         Assert.NotEmpty(movie.Genres);
         Assert.Equal("IPZZ-822", movie.GetProviderId(AmaneMovieProvider.ProviderIdName));
+        Assert.Equal("22", movie.GetProviderId(AmaneMovieProvider.InternalIdProviderIdName));
+    }
+
+    [Fact]
+    public void MapToMovie_NameIsNumberPrefixed()
+    {
+        var movie = AmaneMovieProvider.MapToMovie(LoadMetadataSample());
+
+        Assert.StartsWith("IPZZ-822 ", movie.Name);
     }
 
     [Fact]
