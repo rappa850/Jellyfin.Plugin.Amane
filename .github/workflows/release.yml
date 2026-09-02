@@ -1,0 +1,72 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+env:
+  DLL_NAME: Jellyfin.Plugin.Amane.dll
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Build
+        run: dotnet build -c Release
+
+      - name: Package
+        run: |
+          cd bin/Release/net9.0
+          zip -j "$GITHUB_WORKSPACE/Jellyfin.Plugin.Amane.zip" "$DLL_NAME"
+          cd "$GITHUB_WORKSPACE"
+          md5sum Jellyfin.Plugin.Amane.zip | awk '{print $1}' > checksum.txt
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: Jellyfin.Plugin.Amane.zip
+
+      - name: Update manifest.json
+        run: |
+          python3 - <<'PY'
+          import json, os, datetime
+          tag = os.environ['GITHUB_REF_NAME']               # v0.2.0
+          version = tag.lstrip('v')
+          if version.count('.') == 2:
+              version += '.0'
+          checksum = open('checksum.txt').read().strip()
+          with open('manifest.json') as f:
+              manifest = json.load(f)
+          # 幂等：重跑同一 tag 时先移除旧条目
+          manifest[0]['versions'] = [v for v in manifest[0]['versions'] if v.get('version') != version]
+          manifest[0]['versions'].insert(0, {
+              'version': version,
+              'changelog': f'见 https://github.com/rappa850/Jellyfin.Plugin.Amane/releases/tag/{tag}',
+              'targetAbi': '10.11.0.0',
+              'sourceUrl': f'https://github.com/rappa850/Jellyfin.Plugin.Amane/releases/download/{tag}/Jellyfin.Plugin.Amane.zip',
+              'checksum': checksum,
+              'timestamp': datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
+          })
+          with open('manifest.json', 'w') as f:
+              json.dump(manifest, f, ensure_ascii=False, indent=4)
+              f.write('\n')
+          PY
+
+      - name: Commit manifest to main
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git checkout main
+          git add manifest.json
+          git commit -m "chore: manifest 增加 ${{ github.ref_name }} 版本条目 [skip ci]"
+          git push
