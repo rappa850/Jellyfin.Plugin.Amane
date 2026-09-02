@@ -124,7 +124,7 @@ public class AmaneMovieProvider : IRemoteMetadataProvider<Movie, MovieInfo>, IHa
     {
         var searchResult = new RemoteSearchResult
         {
-            Name = item.Title ?? item.Number ?? string.Empty,
+            Name = FormatDisplayName(item),
             SearchProviderName = Name,
             ImageUrl = item.PosterUrl
         };
@@ -147,14 +147,22 @@ public class AmaneMovieProvider : IRemoteMetadataProvider<Movie, MovieInfo>, IHa
         return searchResult;
     }
 
+    /// <summary>
+    /// 显示名统一格式：番号 + 空格 + 润色标题，如 "IPZZ-822 纯真可怜的…"；缺番号或标题时回退单值。
+    /// 搜索结果（识别对话框）与入库标题共用此格式。
+    /// </summary>
+    internal static string? FormatDisplayName(AmaneMetadata metadata)
+    {
+        return !string.IsNullOrWhiteSpace(metadata.Number) && !string.IsNullOrWhiteSpace(metadata.Title)
+            ? $"{metadata.Number} {metadata.Title}"
+            : metadata.Title ?? metadata.Number;
+    }
+
     internal static Movie MapToMovie(AmaneMetadata metadata)
     {
         var movie = new Movie
         {
-            // 标题格式：番号 + 空格 + 润色标题，如 "IPZZ-822 纯真可怜的…"
-            Name = !string.IsNullOrWhiteSpace(metadata.Number) && !string.IsNullOrWhiteSpace(metadata.Title)
-                ? $"{metadata.Number} {metadata.Title}"
-                : metadata.Title ?? metadata.Number,
+            Name = FormatDisplayName(metadata),
             OriginalTitle = metadata.GetOriginalTitle(),
             Overview = metadata.Plot
         };
