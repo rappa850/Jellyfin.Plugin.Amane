@@ -54,7 +54,10 @@ public class ContractDeserializationTests
     {
         var item = LoadMetadataSample();
 
-        Assert.StartsWith("http", item.PosterUrl, StringComparison.Ordinal);
+        // poster_url 既可能是外源绝对 URL，也可能是 Amane 本地资源的相对路径（裁切海报 /api/resources/{hash}）
+        Assert.True(
+            item.PosterUrl!.StartsWith("http", StringComparison.Ordinal) || item.PosterUrl.StartsWith('/'),
+            $"poster_url 形态异常: {item.PosterUrl}");
         Assert.StartsWith("http", item.ThumbUrl, StringComparison.Ordinal);
         Assert.NotNull(item.ExtraFanart);
         Assert.NotEmpty(item.ExtraFanart);

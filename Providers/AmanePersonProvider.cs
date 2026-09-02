@@ -63,7 +63,7 @@ public class AmanePersonProvider : IRemoteMetadataProvider<Person, PersonLookupI
             person.ProductionYear = birthday.Year;
         }
 
-        var imageUrl = actor.ImageUrls?.FirstOrDefault();
+        var imageUrl = _client.ToProxyImageUrl(actor.ImageUrls?.FirstOrDefault());
         if (!string.IsNullOrWhiteSpace(imageUrl))
         {
             person.ImageInfos = new[]
@@ -112,7 +112,7 @@ public class AmanePersonProvider : IRemoteMetadataProvider<Person, PersonLookupI
         {
             Name = actor.Name ?? fallbackName ?? string.Empty,
             SearchProviderName = Name,
-            ImageUrl = actor.ImageUrls?.FirstOrDefault()
+            ImageUrl = _client.ToProxyImageUrl(actor.ImageUrls?.FirstOrDefault())
         };
 
         if (actor.Id > 0)

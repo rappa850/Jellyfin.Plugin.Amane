@@ -34,4 +34,15 @@ public class AmaneDiagnosticsController : ControllerBase
     {
         return await _client.CheckHealthAsync(cancellationToken).ConfigureAwait(false);
     }
+
+    /// <summary>
+    /// 清空演员缓存：Amane 侧数据更新后调用，下次刮削立即拉取最新数据（影片元数据插件侧不缓存）。
+    /// </summary>
+    /// <returns>被清除的缓存条目数。</returns>
+    [HttpPost("ClearCache")]
+    public ActionResult<object> ClearCache()
+    {
+        var cleared = _client.ClearActorCache();
+        return new { Cleared = cleared };
+    }
 }

@@ -82,6 +82,33 @@ if [[ -n "${ACTOR_DETAIL_ID}" ]]; then
   echo "已保存到 ${ACTOR_DETAIL_OUT}"
 fi
 
+# 图片取图检查：插件把图片 URL 规范化为可直连地址——
+# 相对路径（裁切海报等本地资源）补全主机直取；外源 URL 走 /api/resources/proxy 代理。
+# 均需 token，期望 200 + image/*
+POSTER_URL=$(python3 -c "import json; d=json.load(open('${OUT}')); print((d['items'][0].get('poster_url') or '') if d['items'] else '')")
+
+if [[ -n "${POSTER_URL}" ]]; then
+  if [[ "${POSTER_URL}" == /* ]]; then
+    echo "GET ${AMANE_URL}${POSTER_URL}（本地资源直取）"
+    PROXY_RESULT=$(curl -sS -m 60 -o /dev/null \
+      -H "Authorization: Bearer ${AMANE_TOKEN}" \
+      "${AMANE_URL}${POSTER_URL}" \
+      -w '%{http_code} %{content_type}')
+  else
+    echo "GET ${AMANE_URL}/api/resources/proxy?url=<poster_url>（外源代理）"
+    PROXY_RESULT=$(curl -sS -m 60 -o /dev/null \
+      -H "Authorization: Bearer ${AMANE_TOKEN}" \
+      --get --data-urlencode "url=${POSTER_URL}" \
+      "${AMANE_URL}/api/resources/proxy" \
+      -w '%{http_code} %{content_type}')
+  fi
+  echo "取图响应: ${PROXY_RESULT}"
+  if [[ "${PROXY_RESULT%% *}" != "200" || "${PROXY_RESULT#* }" != image/* ]]; then
+    echo "契约断言失败: 图片取图未返回 200 image/*（实际 ${PROXY_RESULT}）" >&2
+    exit 1
+  fi
+fi
+
 # T3 实时契约断言：字段缺失/类型漂移时非零退出
 python3 - "${OUT}" "${ACTOR_OUT}" "${DETAIL_OUT}" "${ACTOR_DETAIL_OUT}" "${HEALTH_OUT}" <<'PY'
 import json, sys, os

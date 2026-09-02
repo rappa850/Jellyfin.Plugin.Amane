@@ -25,7 +25,7 @@ public sealed class AmaneClient
         PropertyNameCaseInsensitive = true
     };
 
-    private static readonly TimeSpan ActorCacheTtl = TimeSpan.FromHours(6);
+    private static readonly TimeSpan DefaultActorCacheTtl = TimeSpan.FromHours(6);
 
     // 弹性默认值：并发上限 / 单请求超时 / 熔断阈值与冷却
     private const int DefaultMaxConcurrentRequests = 4;
@@ -48,6 +48,13 @@ public sealed class AmaneClient
     // 测试覆盖项（internal 构造函数注入）；生产路径为 null 时读插件配置
     private readonly TimeSpan? _requestTimeoutOverride;
     private readonly string? _apiTokenOverride;
+    private readonly TimeSpan? _actorCacheTtlOverride;
+
+    // 图片下载超时下限：不与元数据 5s 超时共用，慢速图床大图也能下完
+    private static readonly TimeSpan MinImageTimeout = TimeSpan.FromSeconds(30);
+
+    // 浏览器 UA：部分图床对无 UA 的客户端反爬（403），带上成本为零
+    private const string BrowserUserAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36";
 
     // 演员查询缓存：避免同一演员在多部电影刷新时重复请求
     private readonly ConcurrentDictionary<string, (AmaneActor? Actor, DateTimeOffset ExpiresAt)> _actorCache = new();
@@ -72,12 +79,14 @@ public sealed class AmaneClient
         TimeSpan? requestTimeout,
         int circuitFailureThreshold,
         TimeSpan circuitCooldown,
-        string? apiToken = null)
+        string? apiToken = null,
+        TimeSpan? actorCacheTtl = null)
     {
         _httpClientFactory = httpClientFactory;
         _logger = logger;
         _requestTimeoutOverride = requestTimeout;
         _apiTokenOverride = apiToken;
+        _actorCacheTtlOverride = actorCacheTtl;
         _circuitFailureThreshold = circuitFailureThreshold;
         _circuitCooldown = circuitCooldown;
 
@@ -101,6 +110,26 @@ public sealed class AmaneClient
             return TimeSpan.FromSeconds(seconds > 0 ? seconds : DefaultTimeoutSeconds);
         }
     }
+
+    // 演员缓存 TTL：优先测试覆盖值，否则读插件配置（分钟，运行时改配置即时生效）；<= 0 表示禁用缓存
+    private TimeSpan ActorCacheTtl
+    {
+        get
+        {
+            if (_actorCacheTtlOverride.HasValue)
+            {
+                return _actorCacheTtlOverride.Value;
+            }
+
+            var minutes = Plugin.Instance?.Configuration?.ActorCacheMinutes ?? (int)DefaultActorCacheTtl.TotalMinutes;
+            return TimeSpan.FromMinutes(minutes);
+        }
+    }
+
+    private bool IsActorCacheEnabled => ActorCacheTtl > TimeSpan.Zero;
+
+    // 图片下载独立超时：取配置超时与 30s 下限的较大者
+    private TimeSpan ImageTimeout => RequestTimeout > MinImageTimeout ? RequestTimeout : MinImageTimeout;
 
     /// <summary>
     /// 按文件名/番号检索元数据，返回首个命中项；未命中或出错返回 null。
@@ -212,14 +241,14 @@ public sealed class AmaneClient
     }
 
     /// <summary>
-    /// 按演员名检索演员信息（带 6 小时进程内缓存）。优先取名字精确匹配的条目。
+    /// 按演员名检索演员信息（进程内缓存，TTL 见配置 ActorCacheMinutes，0 为禁用）。优先取名字精确匹配的条目。
     /// </summary>
     /// <param name="name">演员名。</param>
     /// <param name="cancellationToken">取消令牌。</param>
     /// <returns>首个命中演员；未命中或出错为 null。</returns>
     public async Task<AmaneActor?> LookupActorAsync(string name, CancellationToken cancellationToken)
     {
-        if (_actorCache.TryGetValue(name, out var cached) && cached.ExpiresAt > DateTimeOffset.UtcNow)
+        if (IsActorCacheEnabled && _actorCache.TryGetValue(name, out var cached) && cached.ExpiresAt > DateTimeOffset.UtcNow)
         {
             return cached.Actor;
         }
@@ -257,7 +286,7 @@ public sealed class AmaneClient
     public async Task<AmaneActor?> GetActorByIdAsync(int id, CancellationToken cancellationToken)
     {
         var cacheKey = "id:" + id.ToString(CultureInfo.InvariantCulture);
-        if (_actorCache.TryGetValue(cacheKey, out var cached) && cached.ExpiresAt > DateTimeOffset.UtcNow)
+        if (IsActorCacheEnabled && _actorCache.TryGetValue(cacheKey, out var cached) && cached.ExpiresAt > DateTimeOffset.UtcNow)
         {
             return cached.Actor;
         }
@@ -307,6 +336,11 @@ public sealed class AmaneClient
 
     private void CacheActor(string key, AmaneActor? actor)
     {
+        if (!IsActorCacheEnabled)
+        {
+            return;
+        }
+
         _actorCache[key] = (actor, DateTimeOffset.UtcNow.Add(ActorCacheTtl));
         if (actor is not null)
         {
@@ -323,21 +357,91 @@ public sealed class AmaneClient
     }
 
     /// <summary>
-    /// 拉取图片响应（供 IRemoteImageProvider.GetImageResponse 使用）。
+    /// 清空演员缓存（Amane 侧演员数据更新后调用，下次查询立即拉取最新数据）。
     /// </summary>
-    /// <param name="url">图片 URL。</param>
+    /// <returns>被清除的缓存条目数。</returns>
+    public int ClearActorCache()
+    {
+        var count = _actorCache.Count;
+        _actorCache.Clear();
+        _logger.LogInformation("Amane 演员缓存已清空（{Count} 条）", count);
+        return count;
+    }
+
+    /// <summary>
+    /// 把图片 URL 规范化改写为可直连地址：
+    /// 相对路径（Amane 本地资源，如裁切海报 <c>/api/resources/{hash}</c>）补全为绝对地址；
+    /// 外源 URL 改写为 Amane 图片代理（<c>/api/resources/proxy?url=</c>），Jellyfin 只需连通 Amane 即可取图，
+    /// 代理端顺带绕过外源防盗链并做本地缓存。空值或已是 Amane 绝对 URL 时原样返回。
+    /// </summary>
+    /// <param name="url">原始图片 URL（绝对或相对）。</param>
+    /// <returns>改写后的绝对 URL。</returns>
+    public string? ToProxyImageUrl(string? url)
+    {
+        if (string.IsNullOrWhiteSpace(url))
+        {
+            return url;
+        }
+
+        var serverUrl = Plugin.Instance?.Configuration?.ServerUrl?.TrimEnd('/') ?? "http://127.0.0.1:18000";
+
+        // Amane 本地资源相对路径（裁切海报等）：补全主机即可，代理端点不接受相对路径（400）
+        if (url.StartsWith('/'))
+        {
+            return serverUrl + url;
+        }
+
+        return url.StartsWith(serverUrl, StringComparison.OrdinalIgnoreCase)
+            ? url
+            : $"{serverUrl}/api/resources/proxy?url={Uri.EscapeDataString(url)}";
+    }
+
+    /// <summary>
+    /// 拉取图片响应（供 IRemoteImageProvider.GetImageResponse 使用）。
+    /// 失败（非 2xx / 非图片内容 / 超时）记警告日志并抛异常，让 Jellyfin 判定下载失败，而非缓存错误体成坏图。
+    /// </summary>
+    /// <param name="url">图片 URL（通常是 <see cref="ToProxyImageUrl"/> 改写后的 Amane 代理 URL）。</param>
     /// <param name="cancellationToken">取消令牌。</param>
     /// <returns>HTTP 响应。</returns>
     public async Task<HttpResponseMessage> GetImageAsync(string url, CancellationToken cancellationToken)
     {
-        // 不在此处释放 client/response，响应流由 Jellyfin 读取
+        // 成功路径不在此处释放 client/response，响应流由 Jellyfin 读取
         var client = CreateClient();
 
-        // 图片透传同样受单请求超时约束，但不占信号量、不参与熔断计数
-        // （GetAsync 默认 ResponseContentRead，返回时内容已缓冲，CTS 可随方法释放）
+        // 图片透传不占信号量、不参与熔断计数；用独立超时（下限 30s）
+        // （SendAsync 默认 ResponseContentRead，返回时内容已缓冲，CTS 可随方法释放）
         using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        timeoutCts.CancelAfter(RequestTimeout);
-        return await client.GetAsync(url, timeoutCts.Token).ConfigureAwait(false);
+        timeoutCts.CancelAfter(ImageTimeout);
+
+        using var request = new HttpRequestMessage(HttpMethod.Get, url);
+        request.Headers.UserAgent.ParseAdd(BrowserUserAgent);
+
+        // Bearer 只发给 Amane 自身（代理端点需鉴权），绝不泄露给第三方图床
+        var config = Plugin.Instance?.Configuration;
+        var serverUrl = config?.ServerUrl?.TrimEnd('/') ?? "http://127.0.0.1:18000";
+        var token = _apiTokenOverride ?? config?.ApiToken;
+        if (!string.IsNullOrWhiteSpace(token) && url.StartsWith(serverUrl, StringComparison.OrdinalIgnoreCase))
+        {
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        }
+
+        var response = await client.SendAsync(request, timeoutCts.Token).ConfigureAwait(false);
+        if (!response.IsSuccessStatusCode)
+        {
+            _logger.LogWarning("Amane 图片下载失败 ({StatusCode}): {Url}", (int)response.StatusCode, url);
+            response.Dispose();
+            throw new HttpRequestException($"图片下载失败 (HTTP {(int)response.StatusCode}): {url}");
+        }
+
+        var mediaType = response.Content.Headers.ContentType?.MediaType;
+        if (mediaType is not null && !mediaType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
+        {
+            _logger.LogWarning("Amane 图片下载返回非图片内容 ({ContentType}): {Url}", mediaType, url);
+            response.Dispose();
+            throw new HttpRequestException($"图片下载返回非图片内容 ({mediaType}): {url}");
+        }
+
+        return response;
     }
 
     /// <summary>

@@ -22,6 +22,11 @@
                     <input is="emby-input" type="number" id="MaxConcurrentRequests" min="1" max="32" />
                     <div class="fieldDescription">批量刮削时同时发往 Amane 的查询上限（默认 4，重启后生效）</div>
                 </div>
+                <div class="inputContainer">
+                    <label class="inputLabel inputLabelUnfocused" for="ActorCacheMinutes">演员缓存时长（分钟）</label>
+                    <input is="emby-input" type="number" id="ActorCacheMinutes" min="0" max="10080" />
+                    <div class="fieldDescription">演员信息进程内缓存时长（默认 360，即 6 小时）；填 0 禁用缓存，Amane 侧更新后立即可见</div>
+                </div>
                 <div>
                     <button is="emby-button" type="submit" class="raised button-submit block emby-button">
                         <span>保存</span>
@@ -33,6 +38,13 @@
                     </button>
                     <div class="fieldDescription">按已保存的配置探活 Amane 并验证 Token，改动后请先保存再测试</div>
                     <div id="TestConnectionResult" style="margin-top: 0.5em; display: none;"></div>
+                </div>
+                <div style="margin-top: 1.5em;">
+                    <button is="emby-button" type="button" id="ClearCache" class="raised block emby-button">
+                        <span>清除演员缓存</span>
+                    </button>
+                    <div class="fieldDescription">Amane 侧演员数据更新后，清除缓存让下次刮削立即拉取最新数据（影片元数据插件侧不缓存）</div>
+                    <div id="ClearCacheResult" style="margin-top: 0.5em; display: none;"></div>
                 </div>
             </form>
         </div>
@@ -49,6 +61,8 @@
                     page.querySelector('#ApiToken').value = config.ApiToken || '';
                     page.querySelector('#TimeoutSeconds').value = config.TimeoutSeconds || 5;
                     page.querySelector('#MaxConcurrentRequests').value = config.MaxConcurrentRequests || 4;
+                    // 0 是合法值（禁用缓存），不能用 || 兜底
+                    page.querySelector('#ActorCacheMinutes').value = config.ActorCacheMinutes !== undefined && config.ActorCacheMinutes !== null ? config.ActorCacheMinutes : 360;
                     Dashboard.hideLoadingMsg();
                 });
             });
@@ -61,6 +75,8 @@
                     config.ApiToken = page.querySelector('#ApiToken').value.trim();
                     config.TimeoutSeconds = parseInt(page.querySelector('#TimeoutSeconds').value, 10) || 5;
                     config.MaxConcurrentRequests = parseInt(page.querySelector('#MaxConcurrentRequests').value, 10) || 4;
+                    var cacheMinutes = parseInt(page.querySelector('#ActorCacheMinutes').value, 10);
+                    config.ActorCacheMinutes = isNaN(cacheMinutes) ? 360 : Math.max(0, cacheMinutes);
                     ApiClient.updatePluginConfiguration(pluginId, config).then(function (result) {
                         Dashboard.processPluginConfigurationUpdateResult(result);
                     });
@@ -95,6 +111,25 @@
                 }).catch(function () {
                     resultBox.style.color = '#c62828';
                     resultBox.textContent = '✗ 测试请求失败，请查看 Jellyfin 日志';
+                }).finally(function () {
+                    button.disabled = false;
+                });
+            });
+
+            page.querySelector('#ClearCache').addEventListener('click', function () {
+                const button = page.querySelector('#ClearCache');
+                const resultBox = page.querySelector('#ClearCacheResult');
+                button.disabled = true;
+                resultBox.style.display = 'block';
+                resultBox.style.color = '';
+                resultBox.textContent = '正在清除…';
+
+                ApiClient.fetch({ url: ApiClient.getUrl('Amane/ClearCache'), type: 'POST' }).then(function (result) {
+                    resultBox.style.color = '#2e7d32';
+                    resultBox.textContent = '✓ 演员缓存已清除（' + (result.Cleared || 0) + ' 条），下次刮削将拉取最新数据';
+                }).catch(function () {
+                    resultBox.style.color = '#c62828';
+                    resultBox.textContent = '✗ 清除请求失败，请查看 Jellyfin 日志';
                 }).finally(function () {
                     button.disabled = false;
                 });

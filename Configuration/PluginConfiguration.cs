@@ -26,4 +26,9 @@ public class PluginConfiguration : BasePluginConfiguration
     /// Gets or sets the 同时发往 Amane 的元数据/演员查询最大并发数（图片下载不占额度）。
     /// </summary>
     public int MaxConcurrentRequests { get; set; } = 4;
+
+    /// <summary>
+    /// Gets or sets the 演员信息进程内缓存时长（分钟），0 表示禁用缓存（Amane 侧数据更新后立即可见）。
+    /// </summary>
+    public int ActorCacheMinutes { get; set; } = 360;
 }

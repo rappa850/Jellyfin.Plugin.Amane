@@ -13,7 +13,7 @@ using Microsoft.Extensions.Logging;
 namespace Jellyfin.Plugin.Amane.Providers;
 
 /// <summary>
-/// Amane 图片提供器：封面/背景图以 URL 形式交给 Jellyfin 自行下载缓存。
+/// Amane 图片提供器：封面/背景图 URL 统一改写为 Amane 代理地址后交给 Jellyfin 下载缓存。
 /// </summary>
 public class AmaneImageProvider : IRemoteImageProvider, IHasOrder
 {
@@ -63,7 +63,7 @@ public class AmaneImageProvider : IRemoteImageProvider, IHasOrder
             images.Add(new RemoteImageInfo
             {
                 ProviderName = Name,
-                Url = metadata.PosterUrl,
+                Url = _client.ToProxyImageUrl(metadata.PosterUrl)!,
                 Type = ImageType.Primary
             });
         }
@@ -75,7 +75,7 @@ public class AmaneImageProvider : IRemoteImageProvider, IHasOrder
         images.AddRange(backdrops.Select(url => new RemoteImageInfo
         {
             ProviderName = Name,
-            Url = url!,
+            Url = _client.ToProxyImageUrl(url)!,
             Type = ImageType.Backdrop
         }));
 

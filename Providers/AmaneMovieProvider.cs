@@ -77,13 +77,13 @@ public class AmaneMovieProvider : IRemoteMetadataProvider<Movie, MovieInfo>, IHa
 
         foreach (var actor in metadata.Actors ?? Enumerable.Empty<string>())
         {
-            // 内联补头像：经 AmaneClient 的 6 小时缓存，重复演员不会重复请求
+            // 内联补头像：经 AmaneClient 的演员缓存（TTL 可配置），重复演员不会重复请求
             var actorInfo = await _client.LookupActorAsync(actor, cancellationToken).ConfigureAwait(false);
             var personInfo = new PersonInfo
             {
                 Name = actor,
                 Type = PersonKind.Actor,
-                ImageUrl = actorInfo?.ImageUrls?.FirstOrDefault()
+                ImageUrl = _client.ToProxyImageUrl(actorInfo?.ImageUrls?.FirstOrDefault())
             };
 
             // 扫库自动绑定：演员命中时把 Amane 演员 id 随 PersonInfo 写入，人物条目创建即带外部 ID
@@ -141,7 +141,7 @@ public class AmaneMovieProvider : IRemoteMetadataProvider<Movie, MovieInfo>, IHa
         {
             Name = FormatDisplayName(item),
             SearchProviderName = Name,
-            ImageUrl = item.PosterUrl
+            ImageUrl = _client.ToProxyImageUrl(item.PosterUrl)
         };
 
         if (DateTime.TryParse(item.Release, CultureInfo.InvariantCulture, DateTimeStyles.None, out var releaseDate))
