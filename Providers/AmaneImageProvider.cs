@@ -60,10 +60,12 @@ public class AmaneImageProvider : IRemoteImageProvider, IHasOrder
         var images = new List<RemoteImageInfo>();
         if (!string.IsNullOrWhiteSpace(metadata.PosterUrl))
         {
+            // Url 走代理（下载经 GetImageResponse 可带 token）；ThumbnailUrl 给浏览器预览用，只能直出外源 URL
             images.Add(new RemoteImageInfo
             {
                 ProviderName = Name,
                 Url = _client.ToProxyImageUrl(metadata.PosterUrl)!,
+                ThumbnailUrl = _client.ToDirectImageUrl(metadata.PosterUrl),
                 Type = ImageType.Primary
             });
         }
@@ -76,6 +78,7 @@ public class AmaneImageProvider : IRemoteImageProvider, IHasOrder
         {
             ProviderName = Name,
             Url = _client.ToProxyImageUrl(url)!,
+            ThumbnailUrl = _client.ToDirectImageUrl(url),
             Type = ImageType.Backdrop
         }));
 

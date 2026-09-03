@@ -369,6 +369,25 @@ public sealed class AmaneClient
     }
 
     /// <summary>
+    /// 直出路径图片 URL：供无法携带 Bearer 的消费方使用——浏览器预览（识别弹窗把 ImageUrl 原样塞进
+    /// <c>&lt;img&gt;</c>）与 Jellyfin 裸 HttpClient 下载（演员头像走 ProviderManager.SaveImage）。
+    /// 外源绝对 URL 原样返回；Amane 本地资源（相对路径或域内绝对 URL）这些消费方必然 401，返回 null 由调用方回退。
+    /// </summary>
+    /// <param name="url">原始图片 URL（绝对或相对）。</param>
+    /// <returns>可无鉴权直连的 URL；Amane 本地资源或空值为 null。</returns>
+    public string? ToDirectImageUrl(string? url)
+    {
+        if (string.IsNullOrWhiteSpace(url))
+        {
+            return null;
+        }
+
+        var serverUrl = Plugin.Instance?.Configuration?.ServerUrl?.TrimEnd('/') ?? "http://127.0.0.1:18000";
+        var isAmaneLocal = url.StartsWith('/') || url.StartsWith(serverUrl, StringComparison.OrdinalIgnoreCase);
+        return isAmaneLocal ? null : url;
+    }
+
+    /// <summary>
     /// 把图片 URL 规范化改写为可直连地址：
     /// 相对路径（Amane 本地资源，如裁切海报 <c>/api/resources/{hash}</c>）补全为绝对地址；
     /// 外源 URL 改写为 Amane 图片代理（<c>/api/resources/proxy?url=</c>），Jellyfin 只需连通 Amane 即可取图，

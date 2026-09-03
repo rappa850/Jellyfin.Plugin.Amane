@@ -58,6 +58,27 @@ public class AmaneClientImageTests
     }
 
     [Fact]
+    public void ToDirectImageUrl_ExternalUrl_ReturnsAsIs()
+    {
+        var client = CreateClient(new StubHandler((_, _) => Task.FromResult(ImageOk())));
+
+        Assert.Equal(ExternalUrl, client.ToDirectImageUrl(ExternalUrl));
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    [InlineData("/api/resources/eb8035bb5c6ccb49")] // 相对路径本地资源：浏览器/裸客户端拿不到（401）
+    [InlineData("http://127.0.0.1:18000/api/resources/eb8035bb5c6ccb49")] // 域内绝对 URL 同理
+    public void ToDirectImageUrl_AmaneLocalOrBlank_ReturnsNull(string? url)
+    {
+        var client = CreateClient(new StubHandler((_, _) => Task.FromResult(ImageOk())));
+
+        Assert.Null(client.ToDirectImageUrl(url));
+    }
+
+    [Fact]
     public async Task GetImage_Success_ReturnsBufferedResponse()
     {
         var handler = new StubHandler((_, _) => Task.FromResult(ImageOk()));

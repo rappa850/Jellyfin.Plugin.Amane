@@ -57,7 +57,8 @@ AMANE_TOKEN=xxx ./scripts/probe-amane.sh [番号]                # T3 实时契�
 - 元数据直取：`GET /api/metadata/{id}` → `{metadata, files, …}`（识别框填数字 id 时使用）。
 - 演员查询：`GET /api/actors?search={name}` → `ActorResponse`（`image_urls`/`birthday`/`overview` 等）；演员头像依赖 Amane 侧先刮削（`POST /api/actors/{id}/scrape`），未刮削的演员 `image_urls` 为空。
 - 演员直取：`GET /api/actors/{id}` → **无包装**直接返回演员对象（列表项不填简介/别名，详情全量含 `aliases`/`provider_ids`/`source_urls`）。
-- 图片代理：`GET /api/resources/proxy?url={外源图片URL}`（**需 token**，实测无 token 401）→ 命中本地 ResourceStore 直接返回，未命中下载后入 store；上游失败 502 且进程内负缓存 15 分钟。注意 `poster_url` 可能是**相对路径** `/api/resources/{hash}`（裁切海报，实测 SONE-614）——代理端点只接受绝对外源 URL（相对路径 400），插件 `ToProxyImageUrl` 对相对路径直接补全 ServerUrl 直取，外源 URL 才走代理。
+- 图片代理：`GET /api/resources/proxy?url={外源图片URL}`（**需 token**，实测无 token 401）→ 命中本地 ResourceStore 直接返回，未命中下载后入 store；上游失败 502 且进程内负缓存 15 分钟。注意 `poster_url` 可能是**相对路径** `/api/resources/{hash}`（裁切海报，实测 SONE-614）——代理端点只接受绝对外源 URL（相对路径 400），插件 `ToProxyImageUrl` 对相对路径直接补全 ServerUrl 直取，外源 URL 才走代理。`/api/resources/{hash}` 同样需 token（无 token 401）。
+- **图片 URL 双轨制**（v1.0.6 修复 v1.0.5 回归）：Jellyfin 的图片消费分两类——下载路径 `RemoteImageInfo.Url` 经 `ItemImageProvider` → `GetImageResponse`（插件可附 Bearer，用 `ToProxyImageUrl`）；直出路径无法带 token，必须用 `ToDirectImageUrl`（外源原样、Amane 本地资源返回 null）：识别/搜索弹窗缩略图 `RemoteSearchResult.ImageUrl`（jellyfin-web 把 ImageUrl 原样塞进 `<img>`，浏览器直连）、`RemoteImageInfo.ThumbnailUrl`、演员头像 `PersonInfo.ImageUrl` 与 Person `ItemImageInfo.Path`（Jellyfin 用裸 HttpClient 经 `ConvertImageToLocal`/`ProviderManager.SaveImage` 下载）。直出路径拿不到 Amane 图是机制使然，不是 bug。
 - OpenAPI：`GET /openapi.json`（无需 token；`/api/openapi.json` 需 token——配置页"测试连接"用它验证 Token 有效性）。
 - 健康检查：`GET /api/health` → `{status, version}`，**无需 token**（错误 token 也返回 200），只证明服务可达，不能据此判断鉴权。
 - 关键字段名：`plot`（非 overview）、`release`、`tags`、`poster_url/thumb_url/extrafanart`、`actors` 为纯字符串数组；日文原标题从 `raw.<来源>.title` 提取。

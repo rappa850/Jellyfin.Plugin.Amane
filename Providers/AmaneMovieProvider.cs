@@ -83,7 +83,8 @@ public class AmaneMovieProvider : IRemoteMetadataProvider<Movie, MovieInfo>, IHa
             {
                 Name = actor,
                 Type = PersonKind.Actor,
-                ImageUrl = _client.ToProxyImageUrl(actorInfo?.ImageUrls?.FirstOrDefault())
+                // 头像由 Jellyfin 裸 HttpClient 下载（ConvertImageToLocal，无法带 token）：外源 URL 直出，Amane 本地资源为 null
+                ImageUrl = _client.ToDirectImageUrl(actorInfo?.ImageUrls?.FirstOrDefault())
             };
 
             // 扫库自动绑定：演员命中时把 Amane 演员 id 随 PersonInfo 写入，人物条目创建即带外部 ID
@@ -141,7 +142,8 @@ public class AmaneMovieProvider : IRemoteMetadataProvider<Movie, MovieInfo>, IHa
         {
             Name = FormatDisplayName(item),
             SearchProviderName = Name,
-            ImageUrl = _client.ToProxyImageUrl(item.PosterUrl)
+            // 识别弹窗缩略图由浏览器直连（无法带 token）：外源 URL 直出；本地裁切海报回退 thumb 预览
+            ImageUrl = _client.ToDirectImageUrl(item.PosterUrl) ?? _client.ToDirectImageUrl(item.ThumbUrl)
         };
 
         if (DateTime.TryParse(item.Release, CultureInfo.InvariantCulture, DateTimeStyles.None, out var releaseDate))

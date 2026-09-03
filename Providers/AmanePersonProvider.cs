@@ -63,7 +63,8 @@ public class AmanePersonProvider : IRemoteMetadataProvider<Person, PersonLookupI
             person.ProductionYear = birthday.Year;
         }
 
-        var imageUrl = _client.ToProxyImageUrl(actor.ImageUrls?.FirstOrDefault());
+        // 人物主图由 Jellyfin 裸 HttpClient 下载（ConvertImageToLocal，无法带 token）：外源 URL 直出，Amane 本地资源不设
+        var imageUrl = _client.ToDirectImageUrl(actor.ImageUrls?.FirstOrDefault());
         if (!string.IsNullOrWhiteSpace(imageUrl))
         {
             person.ImageInfos = new[]
@@ -112,7 +113,8 @@ public class AmanePersonProvider : IRemoteMetadataProvider<Person, PersonLookupI
         {
             Name = actor.Name ?? fallbackName ?? string.Empty,
             SearchProviderName = Name,
-            ImageUrl = _client.ToProxyImageUrl(actor.ImageUrls?.FirstOrDefault())
+            // 搜索弹窗缩略图由浏览器直连（无法带 token）：外源 URL 直出，Amane 本地资源为 null
+            ImageUrl = _client.ToDirectImageUrl(actor.ImageUrls?.FirstOrDefault())
         };
 
         if (actor.Id > 0)
