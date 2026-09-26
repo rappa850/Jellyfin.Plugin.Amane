@@ -19,10 +19,10 @@
   <ItemGroup>
     <!-- 插件 API 控制器运行在 Jellyfin 的 ASP.NET 宿主内，框架引用不会拷出程序集 -->
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
-    <PackageReference Include="Jellyfin.Controller" Version="10.11.11">
+    <PackageReference Include="Jellyfin.Controller" Version="10.11.10">
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="Jellyfin.Model" Version="10.11.11">
+    <PackageReference Include="Jellyfin.Model" Version="10.11.10">
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
   </ItemGroup>

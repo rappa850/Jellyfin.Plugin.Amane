@@ -14,7 +14,7 @@ Amane 负责文件名清洗、番号识别、PostgreSQL 离线库毫秒级检索
 
 ## 要求
 
-- Jellyfin **10.11+**
+- Jellyfin **10.11.10 或更新的 10.11.x**；Jellyfin 12.x 适配验证计划在国庆节前后进行，当前版本尚未适配。
 - 已部署的 Amane 服务（API 兼容基准版本 **v0.16.1**）及其 API Token
 
 ## 安装

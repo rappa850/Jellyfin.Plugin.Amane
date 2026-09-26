@@ -52,7 +52,7 @@ jobs:
           manifest[0]['versions'].insert(0, {
               'version': version,
               'changelog': f'见 https://github.com/rappa850/Jellyfin.Plugin.Amane/releases/tag/{tag}',
-              'targetAbi': '10.11.0.0',
+              'targetAbi': '10.11.10.0',
               'sourceUrl': f'https://github.com/rappa850/Jellyfin.Plugin.Amane/releases/download/{tag}/Jellyfin.Plugin.Amane.zip',
               'checksum': checksum,
               'timestamp': datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')

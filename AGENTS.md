@@ -2,7 +2,7 @@
 
 ## 项目定位
 
-`Jellyfin.Plugin.Amane` 是 Jellyfin 10.11 的元数据插件，定位为本地 Amane 元数据服务（默认 `http://127.0.0.1:18000`）的**透明 HTTP 代理客户端（Thin Client）**：
+`Jellyfin.Plugin.Amane` 是 Jellyfin 10.11.x（最低 10.11.10）的元数据插件；Jellyfin 12.x 需要单独适配。插件定位为本地 Amane 元数据服务（默认 `http://127.0.0.1:18000`）的**透明 HTTP 代理客户端（Thin Client）**：
 
 - 接收 Jellyfin 传入的文件名/番号 → 请求 Amane JSON API → 字段原样映射回 Jellyfin 契约对象。
 - **不做**番号正则解析、多源降级、图片中转。文件名清洗/番号提取/LLM 润色都是 Amane 后端的职责。
