@@ -464,7 +464,7 @@ public sealed class AmaneClient
     }
 
     /// <summary>
-    /// 配置页"测试连接"诊断：先探活 /api/health 测延迟与版本，再请求需鉴权的 /api/openapi.json 验证 Token。
+    /// 配置页"测试连接"诊断：先探活 /api/health 测延迟与版本，再请求受保护的元数据列表验证 Token。
     /// 不占信号量、不计熔断：用户手动诊断不应被熔断器挡住而误导。
     /// </summary>
     /// <param name="cancellationToken">取消令牌。</param>
@@ -513,7 +513,7 @@ public sealed class AmaneClient
             return result;
         }
 
-        // 探针 2：/api/health 不校验 token，用需鉴权的 /api/openapi.json 验证 Token 有效性
+        // 探针 2：OpenAPI 文档位于公开的 /openapi.json；用受保护的 /api/metadata 验证 Token。
         var token = _apiTokenOverride ?? config?.ApiToken;
         if (string.IsNullOrWhiteSpace(token))
         {
@@ -523,7 +523,7 @@ public sealed class AmaneClient
         {
             try
             {
-                using var authRequest = new HttpRequestMessage(HttpMethod.Get, serverUrl + "/api/openapi.json");
+                using var authRequest = new HttpRequestMessage(HttpMethod.Get, serverUrl + "/api/metadata?limit=1");
                 authRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
                 using var authResponse = await client.SendAsync(authRequest, HttpCompletionOption.ResponseHeadersRead, timeoutCts.Token).ConfigureAwait(false);
                 result.AuthStatus = authResponse.StatusCode switch

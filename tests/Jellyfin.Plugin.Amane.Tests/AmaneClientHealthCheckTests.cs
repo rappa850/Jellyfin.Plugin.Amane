@@ -5,7 +5,7 @@ using Xunit;
 namespace Jellyfin.Plugin.Amane.Tests;
 
 /// <summary>
-/// AmaneClient.CheckHealthAsync 测试：探活 /api/health + 经 /api/openapi.json 验证 Token。
+/// AmaneClient.CheckHealthAsync 测试：探活 /api/health + 经受保护的元数据接口验证 Token。
 /// 均通过 stub HttpMessageHandler + 伪 IHttpClientFactory 注入，不发起真实网络请求。
 /// </summary>
 public class AmaneClientHealthCheckTests
@@ -23,7 +23,7 @@ public class AmaneClientHealthCheckTests
                 };
             }
 
-            // /api/openapi.json：带正确 Bearer 才放行
+            // /api/metadata：带正确 Bearer 才放行
             return request.Headers.Authorization?.Parameter == "test-token"
                 ? new HttpResponseMessage(HttpStatusCode.OK)
                 : new HttpResponseMessage(HttpStatusCode.Unauthorized);

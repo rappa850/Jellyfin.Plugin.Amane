@@ -50,7 +50,7 @@ AMANE_TOKEN=xxx ./scripts/probe-amane.sh [番号]                # T3 实时契�
 - 解析统一收口在 `AmaneClient.ResolveMetadataAsync`（影片：AmaneId 直取 → 识别框值 → 名称兜底）与 `ResolveActorAsync`（演员：Amane 值数字直取/名字搜索 → 名称兜底）；数字 id 失效自动回退。
 - 演员缓存同时按名字与 `id:N` 双键写入（`CacheActor`），任一入口命中都回填另一键；`ActorCacheMinutes` 配置为 0 时完全不读写缓存，`POST /Amane/ClearCache` 可立即清空。
 
-## Amane API 契约要点（实测 v0.6.2）
+## Amane API 契约要点（适配基准 v0.16.1）
 
 - 鉴权：`Authorization: Bearer <token>`，token 在插件配置页填。其余 header 形态（X-API-Token 等）均 401。
 - 元数据查询：`GET /api/metadata?search={q}&limit=n` → `{items: [MetadataResponse], total}`，**列表项即完整详情**，无需二次请求。
@@ -59,7 +59,7 @@ AMANE_TOKEN=xxx ./scripts/probe-amane.sh [番号]                # T3 实时契�
 - 演员直取：`GET /api/actors/{id}` → **无包装**直接返回演员对象（列表项不填简介/别名，详情全量含 `aliases`/`provider_ids`/`source_urls`）。
 - 图片代理：`GET /api/resources/proxy?url={外源图片URL}`（**需 token**，实测无 token 401）→ 命中本地 ResourceStore 直接返回，未命中下载后入 store；上游失败 502 且进程内负缓存 15 分钟。注意 `poster_url` 可能是**相对路径** `/api/resources/{hash}`（裁切海报，实测 SONE-614）——代理端点只接受绝对外源 URL（相对路径 400），插件 `ToProxyImageUrl` 对相对路径直接补全 ServerUrl 直取，外源 URL 才走代理。`/api/resources/{hash}` 同样需 token（无 token 401）。
 - **图片 URL 双轨制**（v1.0.6 修复 v1.0.5 回归）：Jellyfin 的图片消费分两类——下载路径 `RemoteImageInfo.Url` 经 `ItemImageProvider` → `GetImageResponse`（插件可附 Bearer，用 `ToProxyImageUrl`）；直出路径无法带 token，必须用 `ToDirectImageUrl`（外源原样、Amane 本地资源返回 null）：识别/搜索弹窗缩略图 `RemoteSearchResult.ImageUrl`（jellyfin-web 把 ImageUrl 原样塞进 `<img>`，浏览器直连）、`RemoteImageInfo.ThumbnailUrl`、演员头像 `PersonInfo.ImageUrl` 与 Person `ItemImageInfo.Path`（Jellyfin 用裸 HttpClient 经 `ConvertImageToLocal`/`ProviderManager.SaveImage` 下载）。直出路径拿不到 Amane 图是机制使然，不是 bug。
-- OpenAPI：`GET /openapi.json`（无需 token；`/api/openapi.json` 需 token——配置页"测试连接"用它验证 Token 有效性）。
+- OpenAPI：`GET /openapi.json`（无需 token）；Amane 的鉴权中间件只保护 `/api/*`，除 `/api/health` 外均需 Bearer。配置页"测试连接"通过 `GET /api/metadata?limit=1` 验证 Token，不能用公开的 OpenAPI 文档验证。
 - 健康检查：`GET /api/health` → `{status, version}`，**无需 token**（错误 token 也返回 200），只证明服务可达，不能据此判断鉴权。
 - 关键字段名：`plot`（非 overview）、`release`、`tags`、`poster_url/thumb_url/extrafanart`、`actors` 为纯字符串数组；日文原标题从 `raw.<来源>.title` 提取。
 - 评分 `score` 为来源站 5 分制，插件 ×2 换算到 Jellyfin 10 分制。
