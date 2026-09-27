@@ -19,14 +19,14 @@ jobs:
 
       - uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '9.0.x'
+          dotnet-version: '10.0.x'
 
       - name: Build
         run: dotnet build -c Release
 
       - name: Package
         run: |
-          cd bin/Release/net9.0
+          cd bin/Release/net10.0
           zip -j "$GITHUB_WORKSPACE/Jellyfin.Plugin.Amane.zip" "$DLL_NAME"
           cd "$GITHUB_WORKSPACE"
           md5sum Jellyfin.Plugin.Amane.zip | awk '{print $1}' > checksum.txt
@@ -52,7 +52,7 @@ jobs:
           manifest[0]['versions'].insert(0, {
               'version': version,
               'changelog': f'见 https://github.com/rappa850/Jellyfin.Plugin.Amane/releases/tag/{tag}',
-              'targetAbi': '10.11.10.0',
+              'targetAbi': '12.1.0.0',
               'sourceUrl': f'https://github.com/rappa850/Jellyfin.Plugin.Amane/releases/download/{tag}/Jellyfin.Plugin.Amane.zip',
               'checksum': checksum,
               'timestamp': datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')

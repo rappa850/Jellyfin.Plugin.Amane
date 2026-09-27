@@ -1,7 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
+    <!-- Jellyfin 12.x 基于 .NET 10，插件需 net10.0（10.11.x 线在 main 分支保持 net9.0） -->
+    <TargetFramework>net10.0</TargetFramework>
     <Version>1.0.7</Version>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
@@ -19,10 +20,10 @@
   <ItemGroup>
     <!-- 插件 API 控制器运行在 Jellyfin 的 ASP.NET 宿主内，框架引用不会拷出程序集 -->
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
-    <PackageReference Include="Jellyfin.Controller" Version="10.11.10">
+    <PackageReference Include="Jellyfin.Controller" Version="12.1.0">
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="Jellyfin.Model" Version="10.11.10">
+    <PackageReference Include="Jellyfin.Model" Version="12.1.0">
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
   </ItemGroup>

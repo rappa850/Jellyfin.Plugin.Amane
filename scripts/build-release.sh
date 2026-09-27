@@ -14,7 +14,7 @@ dotnet build -c Release
 
 mkdir -p dist
 rm -f dist/Jellyfin.Plugin.Amane.zip
-(cd bin/Release/net9.0 && zip -j -X "${ROOT}/dist/Jellyfin.Plugin.Amane.zip" Jellyfin.Plugin.Amane.dll)
+(cd bin/Release/net10.0 && zip -j -X "${ROOT}/dist/Jellyfin.Plugin.Amane.zip" Jellyfin.Plugin.Amane.dll)
 
 echo "产物: dist/Jellyfin.Plugin.Amane.zip"
 md5 -q dist/Jellyfin.Plugin.Amane.zip | sed 's/^/md5: /'
