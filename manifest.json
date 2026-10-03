@@ -9,6 +9,22 @@
         "imageUrl": "https://raw.githubusercontent.com/rappa850/Jellyfin.Plugin.Amane/main/thumb.png",
         "versions": [
             {
+                "version": "1.0.8.0",
+                "changelog": "见 https://github.com/rappa850/Jellyfin.Plugin.Amane/releases/tag/v1.0.8",
+                "targetAbi": "12.1.0.0",
+                "sourceUrl": "https://github.com/rappa850/Jellyfin.Plugin.Amane/releases/download/v1.0.8/Jellyfin.Plugin.Amane.12.zip",
+                "checksum": "42769fbd430cb9f97540f3007c12405b",
+                "timestamp": "2026-10-03T10:59:13Z"
+            },
+            {
+                "version": "1.0.8.0",
+                "changelog": "见 https://github.com/rappa850/Jellyfin.Plugin.Amane/releases/tag/v1.0.8",
+                "targetAbi": "10.11.10.0",
+                "sourceUrl": "https://github.com/rappa850/Jellyfin.Plugin.Amane/releases/download/v1.0.8/Jellyfin.Plugin.Amane.zip",
+                "checksum": "1ab6ce8b5472b0104c2c16843b1db808",
+                "timestamp": "2026-10-03T10:59:13Z"
+            },
+            {
                 "version": "1.0.7.0",
                 "changelog": "见 https://github.com/rappa850/Jellyfin.Plugin.Amane/releases/tag/v1.0.7",
                 "targetAbi": "10.11.10.0",
