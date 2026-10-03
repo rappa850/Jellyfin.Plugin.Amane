@@ -1,20 +1,34 @@
 #!/usr/bin/env bash
-# 本地打包发布：编译 Release 并打出 Jellyfin 可安装的 zip，输出 md5 校验值。
-#
-# 用法:
-#   ./scripts/build-release.sh
-# 产物:
-#   dist/Jellyfin.Plugin.Amane.zip（含 md5 打印，供 manifest.json 使用）
+# 白名单打包：每个平台只分发一个插件 DLL，不包含宿主 SDK。
 set -euo pipefail
-
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-cd "${ROOT}"
-
-dotnet build -c Release
-
+cd "$ROOT"
+platform="${1:-all}"
 mkdir -p dist
-rm -f dist/Jellyfin.Plugin.Amane.zip
-(cd bin/Release/net9.0 && zip -j -X "${ROOT}/dist/Jellyfin.Plugin.Amane.zip" Jellyfin.Plugin.Amane.dll)
-
-echo "产物: dist/Jellyfin.Plugin.Amane.zip"
-md5 -q dist/Jellyfin.Plugin.Amane.zip | sed 's/^/md5: /'
+package() {
+  local project="$1" output="$2" dll="$3" archive="$4"
+  dotnet build "$project" -c Release
+  test -f "$output/$dll"
+  local files=("$dll")
+  rm -f "dist/$archive"
+  (cd "$output" && zip -j -X "$ROOT/dist/$archive" "${files[@]}")
+  python3 - "dist/$archive" "$dll" <<'PY'
+import hashlib, sys, zipfile
+with zipfile.ZipFile(sys.argv[1]) as z:
+    expected = [sys.argv[2]]
+    assert sorted(z.namelist()) == sorted(expected), z.namelist()
+digest = hashlib.md5(open(sys.argv[1], 'rb').read()).hexdigest()
+open(sys.argv[1] + '.md5', 'w').write(digest + '\n')
+print(sys.argv[1], 'md5=' + digest)
+PY
+}
+case "$platform" in jellyfin10|jellyfin12|emby|all) ;; *) echo '用法: build-release.sh [jellyfin10|jellyfin12|emby|all]' >&2; exit 1;; esac
+if [[ "$platform" == jellyfin10 || "$platform" == all ]]; then
+  package src/Amane.Jellyfin/Jellyfin.Plugin.Amane.csproj src/Amane.Jellyfin/bin/Release/net9.0 Jellyfin.Plugin.Amane.dll Jellyfin.Plugin.Amane.zip
+fi
+if [[ "$platform" == jellyfin12 || "$platform" == all ]]; then
+  package src/Amane.Jellyfin12/Amane.Jellyfin12.csproj src/Amane.Jellyfin12/bin/Release/net10.0 Jellyfin.Plugin.Amane.dll Jellyfin.Plugin.Amane.12.zip
+fi
+if [[ "$platform" == emby || "$platform" == all ]]; then
+  package src/Amane.Emby/Amane.Emby.csproj src/Amane.Emby/bin/Release/net8.0 Emby.Plugin.Amane.dll Emby.Plugin.Amane.zip
+fi

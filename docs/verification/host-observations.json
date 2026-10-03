@@ -1,0 +1,166 @@
+[
+  {
+    "port": 18096,
+    "health": {
+      "Reachable": true,
+      "LatencyMs": 7,
+      "Version": "0.17.0",
+      "AuthStatus": "ok"
+    },
+    "movie": {
+      "Name": "AMANE-TEST-001 Amane Compatibility Test",
+      "ProviderIds": {
+        "Amane": "AMANE-TEST-001",
+        "AmaneId": "1"
+      },
+      "Overview": "Synthetic local fixture for plugin compatibility testing; no external scraping performed.",
+      "ImageTags": {
+        "Primary": "7ba8843ca323274942437f23f36d4ced_639266128378999814"
+      },
+      "BackdropImageTags": [
+        "5a08942ddf0840dd192d26b29c4b802d_639266128379559814"
+      ]
+    },
+    "actor": {
+      "Name": "Amane Test Actor",
+      "ProviderIds": {
+        "Amane": "1"
+      },
+      "Overview": "Amane actor profile fixture",
+      "PremiereDate": "1990-01-02T00:00:00.0000000Z",
+      "ImageTags": {
+        "Primary": "150d68cb4bf6cdcd040d12512aa69e05_639266127229999878"
+      }
+    },
+    "actor_image": {
+      "status": 200,
+      "content_type": "image/png",
+      "bytes": 223
+    },
+    "remote_image_count": 3,
+    "manual_download_status": 500,
+    "identify_preview": {
+      "status": 200,
+      "content_type": "image/jpeg",
+      "bytes": 678
+    },
+    "cached_primary": {
+      "status": 200,
+      "content_type": "image/jpeg",
+      "bytes": 678
+    },
+    "clear_cache": {
+      "Cleared": 2
+    }
+  },
+  {
+    "port": 18097,
+    "health": {
+      "Reachable": true,
+      "LatencyMs": 11,
+      "Version": "0.17.0",
+      "AuthStatus": "ok"
+    },
+    "movie": {
+      "Name": "AMANE-TEST-001 Amane Compatibility Test",
+      "ProviderIds": {
+        "Amane": "AMANE-TEST-001",
+        "AmaneId": "1"
+      },
+      "Overview": "Synthetic local fixture for plugin compatibility testing; no external scraping performed.",
+      "ImageTags": {
+        "Primary": "8a7779a86787bf59ecb3d0d2ad99dbfd"
+      },
+      "BackdropImageTags": [
+        "5ab2792a8f7f2bc813b11e05c9e0c377"
+      ]
+    },
+    "actor": {
+      "Name": "Amane Test Actor",
+      "ProviderIds": {
+        "Amane": "1"
+      },
+      "Overview": "Amane actor profile fixture",
+      "PremiereDate": "1990-01-02T00:00:00.0000000Z",
+      "ImageTags": {
+        "Primary": "2548d2b653d3cdb37eb20fa14bb4077f"
+      }
+    },
+    "actor_image": {
+      "status": 200,
+      "content_type": "image/png",
+      "bytes": 223
+    },
+    "remote_image_count": 3,
+    "manual_download_status": 500,
+    "identify_preview": {
+      "status": 200,
+      "content_type": "image/png",
+      "bytes": 223,
+      "mode": "direct"
+    },
+    "cached_primary": {
+      "status": 200,
+      "content_type": "image/jpeg",
+      "bytes": 678
+    },
+    "clear_cache": {
+      "Cleared": 2
+    }
+  },
+  {
+    "port": 18098,
+    "health": {
+      "Reachable": true,
+      "LatencyMs": 14,
+      "Version": "0.17.0",
+      "AuthStatus": "ok"
+    },
+    "movie": {
+      "Name": "AMANE-TEST-001 Amane Compatibility Test",
+      "ProviderIds": {
+        "Amane": "AMANE-TEST-001",
+        "AmaneId": "1"
+      },
+      "Overview": "Synthetic local fixture for plugin compatibility testing; no external scraping performed.",
+      "ImageTags": {
+        "Primary": "f1def8a809cb64c9a799b04185abf88a"
+      },
+      "BackdropImageTags": [
+        "1981676388bfe5204f17e610d0619d90"
+      ]
+    },
+    "actor": {
+      "Name": "Amane Test Actor",
+      "ProviderIds": {
+        "Amane": "1"
+      },
+      "Overview": "Amane actor profile fixture",
+      "PremiereDate": "1990-01-02T00:00:00.0000000Z",
+      "ImageTags": {
+        "Primary": "aaf5b0036676942cd7c00a660bc86df9"
+      }
+    },
+    "actor_image": {
+      "status": 200,
+      "content_type": "image/png",
+      "bytes": 223
+    },
+    "remote_image_count": 3,
+    "manual_download_status": 500,
+    "identify_preview": {
+      "status": 200,
+      "content_type": "image/png",
+      "bytes": 223,
+      "mode": "direct"
+    },
+    "cached_primary": {
+      "status": 200,
+      "content_type": "image/jpeg",
+      "bytes": 678
+    },
+    "clear_cache": {
+      "Cleared": 2
+    }
+  }
+]

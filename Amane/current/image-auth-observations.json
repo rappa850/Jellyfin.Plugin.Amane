@@ -1,0 +1,23 @@
+{
+  "proxy-bearer": {
+    "status": 200,
+    "type": "image/png"
+  },
+  "proxy-anonymous": {
+    "status": 401
+  },
+  "local-bearer": {
+    "status": 200,
+    "type": "image/jpeg"
+  },
+  "local-anonymous": {
+    "status": 401
+  },
+  "local-query-token": {
+    "status": 401
+  },
+  "proxy-cookie": {
+    "status": 200,
+    "type": "image/png"
+  }
+}

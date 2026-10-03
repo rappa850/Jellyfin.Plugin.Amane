@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <!-- 本机仅有 .NET 10 运行时；被测插件目标 net9.0，net10 可正常加载 -->
+    <!-- jf12 分支：插件目标 net10.0（Jellyfin 12.x / .NET 10） -->
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
@@ -13,12 +13,12 @@
     <PackageReference Include="xunit" Version="2.9.3" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" />
     <!-- 主项目的 Jellyfin 引用带 PrivateAssets=all 不传递，测试项目需自行引用 -->
-    <PackageReference Include="Jellyfin.Controller" Version="10.11.10" />
-    <PackageReference Include="Jellyfin.Model" Version="10.11.10" />
+    <PackageReference Include="Jellyfin.Controller" Version="12.1.0" />
+    <PackageReference Include="Jellyfin.Model" Version="12.1.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Jellyfin.Plugin.Amane.csproj" />
+    <ProjectReference Include="..\..\src\Amane.Jellyfin12\Amane.Jellyfin12.csproj" />
   </ItemGroup>
 
   <ItemGroup>

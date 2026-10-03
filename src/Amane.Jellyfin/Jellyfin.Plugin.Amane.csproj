@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- Jellyfin 10.11.x 使用 .NET 9，12.1 适配器单独编译。 -->
+    <TargetFramework>net9.0</TargetFramework>
+    <AssemblyName>Jellyfin.Plugin.Amane</AssemblyName>
+    <RootNamespace>Jellyfin.Plugin.Amane</RootNamespace>
+    <Version>1.0.8</Version>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Configuration\configPage.html" />
+    <InternalsVisibleTo Include="Amane.Jellyfin10.Tests" />
+    <!-- 共用 Core 源码，编译进插件单 DLL；业务代码保持唯一来源。 -->
+    <Compile Include="../Amane.Core/*.cs" Link="Core/%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- 插件 API 控制器运行在 Jellyfin 的 ASP.NET 宿主内，框架引用不会拷出程序集 -->
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="Jellyfin.Controller" Version="10.11.10">
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Jellyfin.Model" Version="10.11.10">
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+  </ItemGroup>
+
+</Project>

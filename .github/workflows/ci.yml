@@ -1,0 +1,24 @@
+name: Compatibility
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Verify Core isolation
+        run: |
+          if grep -REn 'using (Jellyfin|MediaBrowser)|PackageReference.*(Jellyfin|MediaBrowser)' src/Amane.Core --include='*.cs' --include='*.csproj'; then exit 1; fi
+          if grep -n 'Jellyfin\.' src/Amane.Emby/Amane.Emby.csproj; then exit 1; fi
+      - run: dotnet build -c Release
+      - run: dotnet test -c Release --no-build
+      - name: Verify packages
+        run: bash scripts/build-release.sh all
+      - uses: actions/upload-artifact@v4
+        with:
+          name: amane-plugins
+          path: dist/*.zip

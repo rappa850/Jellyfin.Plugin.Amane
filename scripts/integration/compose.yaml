@@ -1,0 +1,54 @@
+services:
+  emby:
+    image: emby/embyserver:4.10.0.40
+    container_name: amane-emby-integration
+    profiles: [emby]
+    environment:
+      UID: "1000"
+      GID: "1000"
+      GIDLIST: ""
+    ports:
+      - "18096:8096"
+    extra_hosts:
+      - "host.docker.internal:172.17.0.1"
+    volumes:
+      - emby-config:/config
+      - emby-cache:/cache
+      - ./library:/mnt/share
+    restart: unless-stopped
+
+  jellyfin:
+    image: jellyfin/jellyfin:10.11.10
+    container_name: amane-jellyfin-integration
+    profiles: [jellyfin]
+    ports:
+      - "18097:8096"
+    extra_hosts:
+      - "host.docker.internal:172.17.0.1"
+    volumes:
+      - jellyfin-config:/config
+      - jellyfin-cache:/cache
+      - ./library:/media:ro
+    restart: unless-stopped
+
+  jellyfin12:
+    image: jellyfin/jellyfin:12.1
+    container_name: amane-jellyfin12-integration
+    profiles: [jellyfin12]
+    ports:
+      - "18098:8096"
+    extra_hosts:
+      - "host.docker.internal:172.17.0.1"
+    volumes:
+      - jellyfin12-config:/config
+      - jellyfin12-cache:/cache
+      - ./library:/media:ro
+    restart: unless-stopped
+
+volumes:
+  emby-config:
+  emby-cache:
+  jellyfin-config:
+  jellyfin-cache:
+  jellyfin12-config:
+  jellyfin12-cache:

@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Version>1.0.8</Version>
+    <AssemblyName>Emby.Plugin.Amane</AssemblyName>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>Amane.Emby</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="MediaBrowser.Server.Core" Version="4.9.1.90" PrivateAssets="all" ExcludeAssets="runtime" />
+    <!-- Emby 从字节加载且先反射类型，同目录依赖与模块初始化器均不足以解析 Core。
+         编译同一份无宿主源码进单 DLL；禁止复制或分叉 Core 业务代码。 -->
+    <Compile Include="../Amane.Core/*.cs" Link="Core/%(Filename)%(Extension)" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.3" />
+    <EmbeddedResource Include="Configuration/configPage.html" />
+    <EmbeddedResource Include="Configuration/configPage.js" />
+    <EmbeddedResource Include="../../thumb.png" LogicalName="Amane.Emby.thumb.png" />
+    <InternalsVisibleTo Include="Amane.Emby.Tests" />
+  </ItemGroup>
+</Project>
