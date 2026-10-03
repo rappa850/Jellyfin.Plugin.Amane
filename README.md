@@ -33,17 +33,19 @@ Jellyfin 两版共用源码但分别编译，必须选择匹配的安装包；Em
 2. 在目录中找到 "Amane" 安装，重启 Jellyfin
 3. 之后有新版本时 Jellyfin 会提示更新
 
-发布清单通过 `targetAbi` 区分 Jellyfin 10.11 与 12.1，服务器选择匹配的版本。新增适配器需发布后才会出现在订阅目录；当前本地开发包按下方方式安装。Emby 使用手动安装，不使用 Jellyfin 的仓库清单。
+发布清单通过 `targetAbi` 区分 Jellyfin 10.11 与 12.1，服务器选择匹配的版本。Emby 使用手动安装，不使用 Jellyfin 的仓库清单。
 
 ### 手动安装
 
-从 [Releases](https://github.com/rappa850/Jellyfin.Plugin.Amane/releases) 选择与服务器匹配的安装包；当前新增适配器尚未发布，可用 `./scripts/build-release.ps1 all` 在本地构建。Linux / WSL 可用 `bash scripts/build-release.sh all`。包名和部署位置如下：
+从 [Releases](https://github.com/rappa850/Jellyfin.Plugin.Amane/releases) 选择与服务器匹配的安装包；从 **v1.0.8** 起，同一版本提供三个适配器。也可用 `./scripts/build-release.ps1 all` 在本地构建；Linux / WSL 可用 `bash scripts/build-release.sh all`。包名和部署位置如下（本地构建输出到 `dist/`）：
 
 | 宿主 | 安装包 | 部署 |
 |---|---|---|
-| Jellyfin 10.11 | `dist/Jellyfin.Plugin.Amane.zip` | 单个 `Jellyfin.Plugin.Amane.dll` 放入数据目录 `plugins/Amane/` |
-| Jellyfin 12.1 | `dist/Jellyfin.Plugin.Amane.12.zip` | 单个 `Jellyfin.Plugin.Amane.dll` 放入数据目录 `plugins/Amane/` |
-| Emby .NET 8 | `dist/Amane.Emby.zip` | 单个 `Amane.Emby.dll` 放入数据目录 `plugins/` |
+| Jellyfin 10.11 | `Jellyfin.Plugin.Amane.zip` | 单个 `Jellyfin.Plugin.Amane.dll` 放入数据目录 `plugins/Amane/` |
+| Jellyfin 12.1 | `Jellyfin.Plugin.Amane.12.zip` | 单个 `Jellyfin.Plugin.Amane.dll` 放入数据目录 `plugins/Amane/` |
+| Emby .NET 8 | `Emby.Plugin.Amane.zip` | 单个 `Emby.Plugin.Amane.dll` 放入数据目录 `plugins/` |
+
+三个适配器使用相同的发布版本号（本次为 **1.0.8**）与 Amane 图标；Emby 图标内嵌在 DLL 中，插件列表显示名称仍为 **Amane**。从旧 Emby 开发包升级时，停止服务器，删除 `plugins/Amane.Emby.dll`，避免同一插件重复加载，再安装 `Emby.Plugin.Amane.dll`。若要保留旧配置，备份并将 `plugins/configurations/Amane.Emby.xml` 复制为 `plugins/configurations/Emby.Plugin.Amane.xml`（已有新配置时不要覆盖）；否则重新填写服务地址与 Token。
 
 重启对应宿主。不要把宿主 SDK DLL 拷入插件目录，也不要同时部署两版 Jellyfin 适配器。三个适配器均将同一份 Core 源码编译进各自插件 DLL，不再分发独立 `Amane.Core.dll`。从此前双 DLL 开发包升级时，移除插件目录中的旧 `Amane.Core.dll`。
 
@@ -71,7 +73,7 @@ docker restart jellyfin
 
 # Emby
 docker exec emby mkdir -p /config/plugins
-docker cp ./Amane.Emby.dll emby:/config/plugins/Amane.Emby.dll
+docker cp ./Emby.Plugin.Amane.dll emby:/config/plugins/Emby.Plugin.Amane.dll
 docker restart emby
 ```
 

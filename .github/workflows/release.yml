@@ -26,16 +26,20 @@ jobs:
           version="${GITHUB_REF_NAME#v}"
           dotnet build src/Amane.Jellyfin/Jellyfin.Plugin.Amane.csproj -c Release -p:Version="$version"
           dotnet build src/Amane.Jellyfin12/Amane.Jellyfin12.csproj -c Release -p:Version="$version"
+          dotnet build src/Amane.Emby/Amane.Emby.csproj -c Release -p:Version="$version"
 
       - name: Package
         run: |
           (cd src/Amane.Jellyfin/bin/Release/net9.0 && zip -j -X "$GITHUB_WORKSPACE/Jellyfin.Plugin.Amane.zip" "$DLL_NAME")
           (cd src/Amane.Jellyfin12/bin/Release/net10.0 && zip -j -X "$GITHUB_WORKSPACE/Jellyfin.Plugin.Amane.12.zip" "$DLL_NAME")
+          (cd src/Amane.Emby/bin/Release/net8.0 && zip -j -X "$GITHUB_WORKSPACE/Emby.Plugin.Amane.zip" Emby.Plugin.Amane.dll)
           python3 - <<'PY'
           import zipfile
           for name in ['Jellyfin.Plugin.Amane.zip', 'Jellyfin.Plugin.Amane.12.zip']:
               with zipfile.ZipFile(name) as z:
                   assert z.namelist() == ['Jellyfin.Plugin.Amane.dll']
+          with zipfile.ZipFile('Emby.Plugin.Amane.zip') as z:
+              assert z.namelist() == ['Emby.Plugin.Amane.dll']
           PY
 
       - name: Create GitHub Release
@@ -44,6 +48,7 @@ jobs:
           files: |
             Jellyfin.Plugin.Amane.zip
             Jellyfin.Plugin.Amane.12.zip
+            Emby.Plugin.Amane.zip
 
       - name: Update manifest.json
         run: |

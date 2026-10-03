@@ -54,6 +54,8 @@ python scripts/probe-amane.py [番号] --actor "演员名"           # 当前公
 
 ## 安装与连接文档约定
 
+- 三适配器使用相同发布版本号；`v*` 标签发布三个安装包。Emby 包和程序集分别为 `Emby.Plugin.Amane.zip` / `Emby.Plugin.Amane.dll`，通过 `IHasThumbImage` 内嵌共用根目录 `thumb.png`；显示名称仍为 Amane。升级旧 Emby 开发包须移除 `Amane.Emby.dll`，避免重复加载。
+- Emby 配置文件名跟随程序集名：升级须停服备份并迁移 `plugins/configurations/Amane.Emby.xml` 到 `Emby.Plugin.Amane.xml`，已有新配置不要覆盖。插件 GUID 不变，但不能据此认定配置文件自动迁移。
 - README 保留现有章节结构，维护三平台包名和单 DLL 部署方式。Jellyfin 仓库清单通过 `targetAbi` 区分 10.11 / 12.1；Emby 不加入 Jellyfin 清单。未发布的本地包不能描述为已可通过订阅安装。
 - Jellyfin 部署到实际数据目录的 `plugins/Amane/`；Emby 部署到 `plugins/`。Docker 官方镜像分别是 `/config/plugins/Amane/` 与 `/config/plugins/`，其他镜像以实际数据目录为准；须保留持久化挂载，升级旧开发包清理独立 Core DLL。
 - ServerUrl 是宿主服务器访问 Amane 的根地址，不附加 `/api`：同一本机用 loopback，同 Docker 网络用服务名/别名与内部端口，容器访问宿主用 `host.docker.internal`，本机访问容器用发布后的宿主端口。

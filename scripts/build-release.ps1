@@ -4,7 +4,7 @@ $amaneRoot = Split-Path $PSScriptRoot -Parent
 $amaneTargets = @{
     jellyfin10 = @{ Project = 'src/Amane.Jellyfin/Jellyfin.Plugin.Amane.csproj'; Output = 'src/Amane.Jellyfin/bin/Release/net9.0'; Dll = 'Jellyfin.Plugin.Amane.dll'; Zip = 'Jellyfin.Plugin.Amane.zip' }
     jellyfin12 = @{ Project = 'src/Amane.Jellyfin12/Amane.Jellyfin12.csproj'; Output = 'src/Amane.Jellyfin12/bin/Release/net10.0'; Dll = 'Jellyfin.Plugin.Amane.dll'; Zip = 'Jellyfin.Plugin.Amane.12.zip' }
-    emby = @{ Project = 'src/Amane.Emby/Amane.Emby.csproj'; Output = 'src/Amane.Emby/bin/Release/net8.0'; Dll = 'Amane.Emby.dll'; Zip = 'Amane.Emby.zip' }
+    emby = @{ Project = 'src/Amane.Emby/Amane.Emby.csproj'; Output = 'src/Amane.Emby/bin/Release/net8.0'; Dll = 'Emby.Plugin.Amane.dll'; Zip = 'Emby.Plugin.Amane.zip' }
 }
 New-Item -ItemType Directory -Path (Join-Path $amaneRoot 'dist') -Force | Out-Null
 $amaneSelected = if ($Platform -eq 'all') { @('jellyfin10', 'jellyfin12', 'emby') } else { @($Platform) }

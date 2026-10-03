@@ -17,12 +17,12 @@ jobs:
           version="${GITHUB_REF_NAME#emby-v}"
           dotnet build src/Amane.Emby/Amane.Emby.csproj -c Release -p:Version="$version"
           mkdir -p dist
-          (cd src/Amane.Emby/bin/Release/net8.0 && zip -j -X "$GITHUB_WORKSPACE/dist/Amane.Emby.zip" Amane.Emby.dll)
+          (cd src/Amane.Emby/bin/Release/net8.0 && zip -j -X "$GITHUB_WORKSPACE/dist/Emby.Plugin.Amane.zip" Emby.Plugin.Amane.dll)
           python3 - <<'PY'
           import zipfile
-          with zipfile.ZipFile('dist/Amane.Emby.zip') as z:
-              assert z.namelist() == ['Amane.Emby.dll']
+          with zipfile.ZipFile('dist/Emby.Plugin.Amane.zip') as z:
+              assert z.namelist() == ['Emby.Plugin.Amane.dll']
           PY
       - uses: softprops/action-gh-release@v2
         with:
-          files: dist/Amane.Emby.zip
+          files: dist/Emby.Plugin.Amane.zip

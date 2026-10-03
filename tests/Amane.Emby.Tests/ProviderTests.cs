@@ -14,6 +14,20 @@ namespace Amane.Emby.Tests;
 public class ProviderTests
 {
     [Fact]
+    public void Plugin_UsesEmbyAssemblyNameAndEmbeddedPngIcon()
+    {
+        var assembly = typeof(Plugin).Assembly;
+        Assert.Equal("Emby.Plugin.Amane", assembly.GetName().Name);
+        Assert.True(typeof(MediaBrowser.Common.Plugins.IHasThumbImage).IsAssignableFrom(typeof(Plugin)));
+        var plugin = (Plugin)System.Runtime.CompilerServices.RuntimeHelpers.GetUninitializedObject(typeof(Plugin));
+        using var image = plugin.GetThumbImage();
+        var signature = new byte[8];
+        image.ReadExactly(signature);
+        Assert.Equal(new byte[] { 137, 80, 78, 71, 13, 10, 26, 10 }, signature);
+        Assert.Equal(MediaBrowser.Model.Drawing.ImageFormat.Png, plugin.ThumbImageFormat);
+    }
+
+    [Fact]
     public void ExternalIds_AreScopedToItemType()
     {
         var movie = new AmaneMovieExternalId();

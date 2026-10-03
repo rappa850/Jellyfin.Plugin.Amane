@@ -3,7 +3,7 @@
     <TargetFramework>net10.0</TargetFramework>
     <AssemblyName>Jellyfin.Plugin.Amane</AssemblyName>
     <RootNamespace>Jellyfin.Plugin.Amane</RootNamespace>
-    <Version>1.0.7</Version>
+    <Version>1.0.8</Version>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>

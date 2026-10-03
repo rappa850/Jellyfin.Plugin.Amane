@@ -30,5 +30,5 @@ if [[ "$platform" == jellyfin12 || "$platform" == all ]]; then
   package src/Amane.Jellyfin12/Amane.Jellyfin12.csproj src/Amane.Jellyfin12/bin/Release/net10.0 Jellyfin.Plugin.Amane.dll Jellyfin.Plugin.Amane.12.zip
 fi
 if [[ "$platform" == emby || "$platform" == all ]]; then
-  package src/Amane.Emby/Amane.Emby.csproj src/Amane.Emby/bin/Release/net8.0 Amane.Emby.dll Amane.Emby.zip
+  package src/Amane.Emby/Amane.Emby.csproj src/Amane.Emby/bin/Release/net8.0 Emby.Plugin.Amane.dll Emby.Plugin.Amane.zip
 fi

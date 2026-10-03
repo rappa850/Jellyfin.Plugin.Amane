@@ -27,11 +27,13 @@ wsl.exe -d Ubuntu-26.04 -u root -- /bin/bash --noprofile --norc -c 'export PATH=
 The Emby adapter currently loads from the root of `/config/plugins`; install its DLL and restart after building:
 
 ```powershell
-wsl.exe -d Ubuntu-26.04 -u root -- docker cp /mnt/c/Users/84422/Documents/Projects/Jellyfin.Plugin.Amane/src/Amane.Emby/bin/Release/net8.0/Amane.Emby.dll amane-emby-integration:/config/plugins/Amane.Emby.dll
+wsl.exe -d Ubuntu-26.04 -u root -- docker cp /mnt/c/Users/84422/Documents/Projects/Jellyfin.Plugin.Amane/src/Amane.Emby/bin/Release/net8.0/Emby.Plugin.Amane.dll amane-emby-integration:/config/plugins/Emby.Plugin.Amane.dll
 wsl.exe -d Ubuntu-26.04 -u root -- docker restart amane-emby-integration
 ```
 
-For Jellyfin, install only the plugin and Core assemblies. Do not copy the `MediaBrowser.*` or `Jellyfin.*` host SDK assemblies into the plugin folder:
+When upgrading the earlier Emby development package, remove `/config/plugins/Amane.Emby.dll` before restarting to avoid loading the same plugin twice. To retain settings, stop the server and back up/copy `plugins/configurations/Amane.Emby.xml` to `plugins/configurations/Emby.Plugin.Amane.xml` unless the new configuration already exists.
+
+For Jellyfin, install only the single plugin DLL. Do not copy the `MediaBrowser.*` or `Jellyfin.*` host SDK assemblies into the plugin folder:
 
 ```powershell
 wsl.exe -d Ubuntu-26.04 -u root -- docker exec -u root amane-jellyfin-integration mkdir -p /config/plugins/Amane

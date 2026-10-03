@@ -6,13 +6,14 @@ using MediaBrowser.Common.Configuration;
 using MediaBrowser.Common.Plugins;
 using MediaBrowser.Model.Plugins;
 using MediaBrowser.Model.Serialization;
+using MediaBrowser.Model.Drawing;
 
 namespace Amane.Emby;
 
 /// <summary>
 /// Amane 元数据插件：作为本地 Amane 服务的透明 HTTP 代理客户端。
 /// </summary>
-public class Plugin : BasePlugin<PluginConfiguration>, IHasWebPages
+public class Plugin : BasePlugin<PluginConfiguration>, IHasWebPages, IHasThumbImage
 {
     /// <summary>
     /// 插件固定 GUID。
@@ -47,6 +48,13 @@ public class Plugin : BasePlugin<PluginConfiguration>, IHasWebPages
 
     /// <inheritdoc />
     public override Guid Id => Guid.Parse(PluginGuid);
+
+    /// <summary>与 Jellyfin 仓库清单共用同一张图标，内嵌在单 DLL 中。</summary>
+    public Stream GetThumbImage() => GetType().Assembly.GetManifestResourceStream("Amane.Emby.thumb.png")
+        ?? throw new InvalidOperationException("插件图标资源缺失");
+
+    /// <inheritdoc />
+    public ImageFormat ThumbImageFormat => ImageFormat.Png;
 
     /// <inheritdoc />
     public IEnumerable<PluginPageInfo> GetPages()

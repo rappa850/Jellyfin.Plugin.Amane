@@ -23,9 +23,11 @@ Windows SDK 10.0.401；WSL Ubuntu 26.04 / Docker 29.1.3。隔离容器：Emby 4.
 
 三宿主均成功加载插件，连接与 Token 验证通过。完成真实影片入库、标题/简介/评分映射、影片 Amane + AmaneId 写入、演员 Amane 数字 ID 绑定、演员详情刷新（简介与生日）、自动影片图片缓存、清除缓存。Emby 配置页经浏览器验证，测试连接和清除缓存按钮可用。
 
+v1.0.8 的 Emby 更名包在隔离宿主加载成功，插件列表版本为 `1.0.8.0`；图标接口 HTTP 200 / image/png，返回字节与根目录 `thumb.png` 完全一致。配置文件名随 DLL 改名，旧配置迁移方式见 README。
+
 图片验证实际读取字节与 Content-Type，三台封面、演员头像和识别预览均 HTTP 200。测试期间替换了不适合容器访问的旧 loopback 演员 URL，并清理隔离库里旧的远程图片引用；仅有 ImageTags 不能证明图片可用。Amane 最新公开 API 样本与探针也已重新采样通过。
 
-单元测试覆盖 Core 和三个适配器共 80 项；Release 构建与白名单打包检查。运行命令：
+单元测试覆盖 Core 和三个适配器共 81 项（含 Emby 包名与内嵌图标回归）；Release 构建与白名单打包检查。运行命令：
 
 ```powershell
 dotnet build Amane.slnx -c Release
@@ -36,4 +38,4 @@ python scripts/integration/verify_hosts.py
 
 宿主摘要在 [host-observations.json](verification/host-observations.json)，Amane 公开 API 合成样本在 [Amane/current](../Amane/current)。测试凭据仅在本机临时运行目录与隔离容器配置内，未写入仓库。`verify_hosts.py` 需要临时目录里已经初始化的会话，不是无需准备的一键安装脚本。
 
-图片的手动选图、浏览器直出和延迟下载存在真实鉴权约束，详见 [评估报告](image-url-evaluation.md)。Emby 必须开启媒体库提前下载图片。未验证 Emby 4.9 实际服务器、其他平台/CPU、Mono 宿主或用户生产片库，不能由 SDK 编译成功推断这些平台可用。当前改动与安装包保留本地，未推送或发布。
+图片的手动选图、浏览器直出和延迟下载存在真实鉴权约束，详见 [评估报告](image-url-evaluation.md)。Emby 必须开启媒体库提前下载图片。未验证 Emby 4.9 实际服务器、其他平台/CPU 或 Mono 宿主，不能由 SDK 编译成功推断这些平台可用。用户另已反馈在其 Emby 服务器配置正确 Token 后，实际影片成功识别并获取封面和简介。发布状态以 GitHub Releases 为准。
