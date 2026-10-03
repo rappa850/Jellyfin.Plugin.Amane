@@ -46,6 +46,10 @@ CodeCoverage/
 
 # MSBuild Binary and Structured Log
 *.binlog
+dist/
+scripts/integration/library/
+scripts/integration/plugin/
+__pycache__/
 
 # MSTest test Results
 [Tt]est[Rr]esult*/

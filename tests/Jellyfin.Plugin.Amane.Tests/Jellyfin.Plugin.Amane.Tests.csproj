@@ -18,7 +18,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Jellyfin.Plugin.Amane.csproj" />
+    <ProjectReference Include="..\..\src\Amane.Jellyfin12\Amane.Jellyfin12.csproj" />
   </ItemGroup>
 
   <ItemGroup>

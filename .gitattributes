@@ -1,0 +1,2 @@
+# Shell 脚本在 Windows 检出后也必须能直接用于 WSL / Linux。
+*.sh text eol=lf

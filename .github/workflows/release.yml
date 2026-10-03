@@ -22,41 +22,51 @@ jobs:
           dotnet-version: '10.0.x'
 
       - name: Build
-        run: dotnet build -c Release
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          dotnet build src/Amane.Jellyfin/Jellyfin.Plugin.Amane.csproj -c Release -p:Version="$version"
+          dotnet build src/Amane.Jellyfin12/Amane.Jellyfin12.csproj -c Release -p:Version="$version"
 
       - name: Package
         run: |
-          cd bin/Release/net10.0
-          zip -j "$GITHUB_WORKSPACE/Jellyfin.Plugin.Amane.zip" "$DLL_NAME"
-          cd "$GITHUB_WORKSPACE"
-          md5sum Jellyfin.Plugin.Amane.zip | awk '{print $1}' > checksum.txt
+          (cd src/Amane.Jellyfin/bin/Release/net9.0 && zip -j -X "$GITHUB_WORKSPACE/Jellyfin.Plugin.Amane.zip" "$DLL_NAME")
+          (cd src/Amane.Jellyfin12/bin/Release/net10.0 && zip -j -X "$GITHUB_WORKSPACE/Jellyfin.Plugin.Amane.12.zip" "$DLL_NAME")
+          python3 - <<'PY'
+          import zipfile
+          for name in ['Jellyfin.Plugin.Amane.zip', 'Jellyfin.Plugin.Amane.12.zip']:
+              with zipfile.ZipFile(name) as z:
+                  assert z.namelist() == ['Jellyfin.Plugin.Amane.dll']
+          PY
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: Jellyfin.Plugin.Amane.zip
+          files: |
+            Jellyfin.Plugin.Amane.zip
+            Jellyfin.Plugin.Amane.12.zip
 
       - name: Update manifest.json
         run: |
           python3 - <<'PY'
-          import json, os, datetime
+          import json, os, datetime, hashlib
           tag = os.environ['GITHUB_REF_NAME']               # v0.2.0
           version = tag.lstrip('v')
           if version.count('.') == 2:
               version += '.0'
-          checksum = open('checksum.txt').read().strip()
           with open('manifest.json') as f:
               manifest = json.load(f)
-          # 幂等：重跑同一 tag 时先移除旧条目
-          manifest[0]['versions'] = [v for v in manifest[0]['versions'] if v.get('version') != version]
-          manifest[0]['versions'].insert(0, {
-              'version': version,
-              'changelog': f'见 https://github.com/rappa850/Jellyfin.Plugin.Amane/releases/tag/{tag}',
-              'targetAbi': '12.1.0.0',
-              'sourceUrl': f'https://github.com/rappa850/Jellyfin.Plugin.Amane/releases/download/{tag}/Jellyfin.Plugin.Amane.zip',
-              'checksum': checksum,
-              'timestamp': datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
-          })
+          # 两条 ABI 分别指向自己的资产，Emby 不进入 Jellyfin 清单。
+          abis = {'10.11.10.0', '12.1.0.0'}
+          manifest[0]['versions'] = [v for v in manifest[0]['versions'] if not (v.get('version') == version and v.get('targetAbi') in abis)]
+          for abi, asset in [('10.11.10.0', 'Jellyfin.Plugin.Amane.zip'), ('12.1.0.0', 'Jellyfin.Plugin.Amane.12.zip')]:
+              manifest[0]['versions'].insert(0, {
+                  'version': version,
+                  'changelog': f'见 https://github.com/rappa850/Jellyfin.Plugin.Amane/releases/tag/{tag}',
+                  'targetAbi': abi,
+                  'sourceUrl': f'https://github.com/rappa850/Jellyfin.Plugin.Amane/releases/download/{tag}/{asset}',
+                  'checksum': hashlib.md5(open(asset, 'rb').read()).hexdigest(),
+                  'timestamp': datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
+              })
           with open('manifest.json', 'w') as f:
               json.dump(manifest, f, ensure_ascii=False, indent=4)
               f.write('\n')

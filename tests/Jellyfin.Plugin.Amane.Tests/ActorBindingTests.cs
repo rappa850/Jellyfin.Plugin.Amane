@@ -1,3 +1,4 @@
+using Amane.Core;
 using System.Text.Json;
 using Jellyfin.Plugin.Amane.Providers;
 using MediaBrowser.Controller.Entities;
@@ -26,6 +27,7 @@ public class ActorBindingTests
         Assert.NotNull(actor);
         Assert.Equal(6, actor.Id);
         Assert.Equal("林芽依", actor.Name);
+        Assert.NotNull(actor.Aliases);
         Assert.Contains("Mei Hayashi", actor.Aliases);
     }
 

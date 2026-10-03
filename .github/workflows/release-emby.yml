@@ -1,0 +1,28 @@
+name: Release Emby
+on:
+  push:
+    tags: ['emby-v*']
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Build and package
+        run: |
+          version="${GITHUB_REF_NAME#emby-v}"
+          dotnet build src/Amane.Emby/Amane.Emby.csproj -c Release -p:Version="$version"
+          mkdir -p dist
+          (cd src/Amane.Emby/bin/Release/net8.0 && zip -j -X "$GITHUB_WORKSPACE/dist/Amane.Emby.zip" Amane.Emby.dll)
+          python3 - <<'PY'
+          import zipfile
+          with zipfile.ZipFile('dist/Amane.Emby.zip') as z:
+              assert z.namelist() == ['Amane.Emby.dll']
+          PY
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: dist/Amane.Emby.zip

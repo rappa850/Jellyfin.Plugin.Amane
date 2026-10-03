@@ -1,0 +1,75 @@
+{
+  "metadata": {
+    "id": 1,
+    "number": "AMANE-TEST-001",
+    "title": "Amane Compatibility Test",
+    "actors": [
+      "Amane Test Actor"
+    ],
+    "studio": "Amane Test Studio",
+    "publisher": "Amane Test Publisher",
+    "release": "2026-01-02",
+    "runtime": 95,
+    "tags": [
+      "compatibility-test"
+    ],
+    "series": "Amane Test Series",
+    "plot": "Synthetic local fixture for plugin compatibility testing; no external scraping performed.",
+    "directors": [],
+    "poster_url": "/api/resources/5b306fb512d613b8",
+    "thumb_url": "http://127.0.0.1:18101/thumb.png",
+    "trailer_url": null,
+    "extrafanart": [
+      "http://127.0.0.1:18101/backdrop.png"
+    ],
+    "score": 4.2,
+    "poster_urls": [
+      "/api/resources/5b306fb512d613b8"
+    ],
+    "thumb_urls": [
+      "http://127.0.0.1:18101/thumb.png"
+    ],
+    "trailer_urls": [],
+    "extrafanart_urls": {
+      "fixture": [
+        "http://127.0.0.1:18101/backdrop.png"
+      ]
+    },
+    "scores": {
+      "fixture": 4.2
+    },
+    "external_ids": {},
+    "source_urls": {},
+    "field_sources": {},
+    "raw": {
+      "fixture": {
+        "title": "Amane Compatibility Test"
+      }
+    },
+    "file_count": 0,
+    "file_phase": {
+      "has_subtitle": false,
+      "uncensored": false,
+      "mosaics": [],
+      "definition": null
+    },
+    "created_at": "2026-10-03T07:45:26.687457Z",
+    "updated_at": "2026-10-03T07:52:56.180182Z"
+  },
+  "files": [],
+  "user_tags": [],
+  "comments": [],
+  "actor_ids": {
+    "Amane Test Actor": 1
+  },
+  "actor_genders": {
+    "Amane Test Actor": "unknown"
+  },
+  "director_ids": {},
+  "tag_ids": {
+    "compatibility-test": 1
+  },
+  "studio_id": 1,
+  "publisher_id": 1,
+  "series_id": 1
+}

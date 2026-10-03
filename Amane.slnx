@@ -1,0 +1,16 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Amane.Core/Amane.Core.csproj" />
+    <Project Path="src/Amane.Emby/Amane.Emby.csproj" />
+    <Project Path="src/Amane.Jellyfin12/Amane.Jellyfin12.csproj" />
+  </Folder>
+  <Folder Name="/src/Amane.Jellyfin/">
+    <Project Path="src/Amane.Jellyfin/Jellyfin.Plugin.Amane.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Amane.Core.Tests/Amane.Core.Tests.csproj" />
+    <Project Path="tests/Amane.Emby.Tests/Amane.Emby.Tests.csproj" />
+    <Project Path="tests/Amane.Jellyfin10.Tests/Amane.Jellyfin10.Tests.csproj" />
+    <Project Path="tests/Jellyfin.Plugin.Amane.Tests/Jellyfin.Plugin.Amane.Tests.csproj" />
+  </Folder>
+</Solution>

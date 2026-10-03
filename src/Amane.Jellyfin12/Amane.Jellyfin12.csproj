@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <AssemblyName>Jellyfin.Plugin.Amane</AssemblyName>
+    <RootNamespace>Jellyfin.Plugin.Amane</RootNamespace>
+    <Version>1.0.7</Version>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- 接口实现源码相同，SDK 和产物完全独立。 -->
+    <Compile Include="../Amane.Jellyfin/**/*.cs" Exclude="../Amane.Jellyfin/bin/**;../Amane.Jellyfin/obj/**" />
+    <EmbeddedResource Include="../Amane.Jellyfin/Configuration/configPage.html" LogicalName="Jellyfin.Plugin.Amane.Configuration.configPage.html" />
+    <InternalsVisibleTo Include="Jellyfin.Plugin.Amane.Tests" />
+    <!-- 共用 Core 源码，编译进插件单 DLL；业务代码保持唯一来源。 -->
+    <Compile Include="../Amane.Core/*.cs" Link="Core/%(Filename)%(Extension)" />
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="Jellyfin.Controller" Version="12.1.0" PrivateAssets="all" />
+    <PackageReference Include="Jellyfin.Model" Version="12.1.0" PrivateAssets="all" />
+  </ItemGroup>
+</Project>

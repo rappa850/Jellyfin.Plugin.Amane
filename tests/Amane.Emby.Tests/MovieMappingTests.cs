@@ -1,11 +1,11 @@
 using Amane.Core;
 using System.Text.Json;
-using Jellyfin.Plugin.Amane.Providers;
+using Amane.Emby.Providers;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Model.Entities;
 using Xunit;
 
-namespace Jellyfin.Plugin.Amane.Tests;
+namespace Amane.Emby.Tests;
 
 /// <summary>
 /// T2 字段映射测试：Amane DTO → Jellyfin Movie 契约对象。
