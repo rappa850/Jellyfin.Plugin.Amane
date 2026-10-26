@@ -19,6 +19,11 @@ public class PluginConfiguration : BasePluginConfiguration, IAmaneSettings
     public string ApiToken { get; set; } = string.Empty;
 
     /// <summary>
+    /// Gets or sets the Amane 图片 Token（Amane 0.23.0+）。留空时本地图片（如演员头像）无法被宿主无鉴权下载。
+    /// </summary>
+    public string ImageToken { get; set; } = string.Empty;
+
+    /// <summary>
     /// Gets or sets the 单次 HTTP 请求超时时间（秒）。冷门资源 LLM 刮削较慢时可调大。
     /// </summary>
     public int TimeoutSeconds { get; set; } = 5;

@@ -69,13 +69,45 @@ public class AmaneClientImageTests
     [InlineData(null)]
     [InlineData("")]
     [InlineData("   ")]
-    [InlineData("/api/resources/eb8035bb5c6ccb49")] // 相对路径本地资源：浏览器/裸客户端拿不到（401）
+    [InlineData("/api/resources/eb8035bb5c6ccb49")] // 未配置图片 Token：浏览器/裸客户端拿不到（401）
     [InlineData("http://127.0.0.1:18000/api/resources/eb8035bb5c6ccb49")] // 域内绝对 URL 同理
     public void ToDirectImageUrl_AmaneLocalOrBlank_ReturnsNull(string? url)
     {
         var client = CreateClient(new StubHandler((_, _) => Task.FromResult(ImageOk())));
 
         Assert.Null(client.ToDirectImageUrl(url));
+    }
+
+    [Theory]
+    [InlineData("/api/resources/eb8035bb5c6ccb49", "http://127.0.0.1:18000/api/resources/eb8035bb5c6ccb49?token=img-tok")]
+    [InlineData("http://127.0.0.1:18000/api/resources/eb8035bb5c6ccb49", "http://127.0.0.1:18000/api/resources/eb8035bb5c6ccb49?token=img-tok")]
+    [InlineData("/api/resources/a?v=1", "http://127.0.0.1:18000/api/resources/a?v=1&token=img-tok")]
+    public void ToDirectImageUrl_AmaneLocalWithImageToken_AppendsTokenQuery(string url, string expected)
+    {
+        var client = CreateClient(new StubHandler((_, _) => Task.FromResult(ImageOk())), imageToken: " img-tok ");
+
+        Assert.Equal(expected, client.ToDirectImageUrl(url));
+    }
+
+    [Fact]
+    public void ToDirectImageUrl_ImageToken_IsUrlEscapedAndNeverAddedToExternalUrl()
+    {
+        var client = CreateClient(new StubHandler((_, _) => Task.FromResult(ImageOk())), imageToken: "a b&c");
+
+        Assert.Equal("http://127.0.0.1:18000/api/resources/x?token=a%20b%26c", client.ToDirectImageUrl("/api/resources/x"));
+        Assert.Equal(ExternalUrl, client.ToDirectImageUrl(ExternalUrl));
+    }
+
+    [Fact]
+    public async Task GetImage_HttpError_DoesNotLeakImageTokenInException()
+    {
+        var handler = new StubHandler((_, _) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.Unauthorized)));
+        var client = CreateClient(handler, imageToken: "img-tok");
+
+        var ex = await Assert.ThrowsAsync<HttpRequestException>(() => client.GetImageAsync(
+            "http://127.0.0.1:18000/api/resources/x?token=img-tok", CancellationToken.None));
+
+        Assert.DoesNotContain("img-tok", ex.Message);
     }
 
     [Fact]
@@ -152,7 +184,7 @@ public class AmaneClientImageTests
         };
     }
 
-    private static AmaneClient CreateClient(StubHandler handler, string? apiToken = null)
+    private static AmaneClient CreateClient(StubHandler handler, string? apiToken = null, string? imageToken = null)
     {
         return new AmaneClient(
             new StubHttpClientFactory(handler),
@@ -161,7 +193,8 @@ public class AmaneClientImageTests
             requestTimeout: TimeSpan.FromSeconds(10),
             circuitFailureThreshold: 1000,
             circuitCooldown: TimeSpan.FromMinutes(1),
-            apiToken: apiToken);
+            apiToken: apiToken,
+            settings: new AmaneSettings { ImageToken = imageToken ?? string.Empty });
     }
 
     private sealed class StubHandler : HttpMessageHandler

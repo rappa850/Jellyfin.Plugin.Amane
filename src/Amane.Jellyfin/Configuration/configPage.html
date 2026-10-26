@@ -13,6 +13,11 @@
                     <div class="fieldDescription">Amane 的 API 访问令牌（Authorization: Bearer）</div>
                 </div>
                 <div class="inputContainer">
+                    <label class="inputLabel inputLabelUnfocused" for="ImageToken">图片 Token</label>
+                    <input is="emby-input" type="password" id="ImageToken" />
+                    <div class="fieldDescription">Amane 0.23.0 及以上可用，见 Amane 启动日志或数据目录 image_token 文件；留空时演员头像等本地图片无法获取</div>
+                </div>
+                <div class="inputContainer">
                     <label class="inputLabel inputLabelUnfocused" for="TimeoutSeconds">请求超时（秒）</label>
                     <input is="emby-input" type="number" id="TimeoutSeconds" min="1" max="120" />
                     <div class="fieldDescription">单请求超时，冷门资源刮削慢时可调大（默认 5）</div>
@@ -59,6 +64,7 @@
                 ApiClient.getPluginConfiguration(pluginId).then(function (config) {
                     page.querySelector('#ServerUrl').value = config.ServerUrl || 'http://127.0.0.1:18000';
                     page.querySelector('#ApiToken').value = config.ApiToken || '';
+                    page.querySelector('#ImageToken').value = config.ImageToken || '';
                     page.querySelector('#TimeoutSeconds').value = config.TimeoutSeconds || 5;
                     page.querySelector('#MaxConcurrentRequests').value = config.MaxConcurrentRequests || 4;
                     // 0 是合法值（禁用缓存），不能用 || 兜底
@@ -73,6 +79,7 @@
                 ApiClient.getPluginConfiguration(pluginId).then(function (config) {
                     config.ServerUrl = page.querySelector('#ServerUrl').value.trim();
                     config.ApiToken = page.querySelector('#ApiToken').value.trim();
+                    config.ImageToken = page.querySelector('#ImageToken').value.trim();
                     config.TimeoutSeconds = parseInt(page.querySelector('#TimeoutSeconds').value, 10) || 5;
                     config.MaxConcurrentRequests = parseInt(page.querySelector('#MaxConcurrentRequests').value, 10) || 4;
                     var cacheMinutes = parseInt(page.querySelector('#ActorCacheMinutes').value, 10);
