@@ -7,6 +7,7 @@ public sealed class JellyfinAmaneSettings : IAmaneSettings
 {
     public string ServerUrl => Plugin.Instance?.Configuration.ServerUrl ?? "http://127.0.0.1:18000";
     public string ApiToken => Plugin.Instance?.Configuration.ApiToken ?? string.Empty;
+    public string ImageToken => Plugin.Instance?.Configuration.ImageToken ?? string.Empty;
     public int TimeoutSeconds => Plugin.Instance?.Configuration.TimeoutSeconds ?? 5;
     public int MaxConcurrentRequests => Plugin.Instance?.Configuration.MaxConcurrentRequests ?? 4;
     public int ActorCacheMinutes => Plugin.Instance?.Configuration.ActorCacheMinutes ?? 360;

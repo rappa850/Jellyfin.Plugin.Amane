@@ -8,6 +8,7 @@ define([], function () {
                 ApiClient.getPluginConfiguration(pluginId).then(function (config) {
                     page.querySelector('#ServerUrl').value = config.ServerUrl || 'http://127.0.0.1:18000';
                     page.querySelector('#ApiToken').value = config.ApiToken || '';
+                    page.querySelector('#ImageToken').value = config.ImageToken || '';
                     page.querySelector('#TimeoutSeconds').value = config.TimeoutSeconds || 5;
                     page.querySelector('#MaxConcurrentRequests').value = config.MaxConcurrentRequests || 4;
                     // 0 是合法值（禁用缓存），不能用 || 兜底
@@ -22,6 +23,7 @@ define([], function () {
                 ApiClient.getPluginConfiguration(pluginId).then(function (config) {
                     config.ServerUrl = page.querySelector('#ServerUrl').value.trim();
                     config.ApiToken = page.querySelector('#ApiToken').value.trim();
+                    config.ImageToken = page.querySelector('#ImageToken').value.trim();
                     config.TimeoutSeconds = parseInt(page.querySelector('#TimeoutSeconds').value, 10) || 5;
                     config.MaxConcurrentRequests = parseInt(page.querySelector('#MaxConcurrentRequests').value, 10) || 4;
                     var cacheMinutes = parseInt(page.querySelector('#ActorCacheMinutes').value, 10);

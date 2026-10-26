@@ -5,6 +5,8 @@ public interface IAmaneSettings
 {
     string ServerUrl { get; }
     string ApiToken { get; }
+    /// <summary>Amane 图片 Token（0.23.0+），仅用于无法带请求头的图片访问，经 query token 传递。</summary>
+    string ImageToken { get; }
     int TimeoutSeconds { get; }
     int MaxConcurrentRequests { get; }
     int ActorCacheMinutes { get; }
@@ -15,6 +17,7 @@ public sealed class AmaneSettings : IAmaneSettings
 {
     public string ServerUrl { get; set; } = "http://127.0.0.1:18000";
     public string ApiToken { get; set; } = string.Empty;
+    public string ImageToken { get; set; } = string.Empty;
     public int TimeoutSeconds { get; set; } = 5;
     public int MaxConcurrentRequests { get; set; } = 4;
     public int ActorCacheMinutes { get; set; } = 360;

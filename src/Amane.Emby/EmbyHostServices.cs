@@ -44,6 +44,7 @@ internal sealed class EmbyAmaneSettings : IAmaneSettings
     private Configuration.PluginConfiguration Config => Plugin.Instance!.Configuration;
     public string ServerUrl => Config.ServerUrl;
     public string ApiToken => Config.ApiToken;
+    public string ImageToken => Config.ImageToken;
     public int TimeoutSeconds => Config.TimeoutSeconds;
     public int MaxConcurrentRequests => Config.MaxConcurrentRequests;
     public int ActorCacheMinutes => Config.ActorCacheMinutes;

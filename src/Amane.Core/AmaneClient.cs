@@ -383,10 +383,11 @@ public sealed class AmaneClient
     /// <summary>
     /// 直出路径图片 URL：供无法携带 Bearer 的消费方使用——浏览器预览（识别弹窗把 ImageUrl 原样塞进
     /// <c>&lt;img&gt;</c>）与 Jellyfin 裸 HttpClient 下载（演员头像走 ProviderManager.SaveImage）。
-    /// 外源绝对 URL 原样返回；Amane 本地资源（相对路径或域内绝对 URL）这些消费方必然 401，返回 null 由调用方回退。
+    /// 外源绝对 URL 原样返回；Amane 本地资源（相对路径或域内绝对 URL）带上图片 Token 的 query 参数
+    /// （Amane 0.23.0+），未配置图片 Token 时这些消费方必然 401，返回 null 由调用方回退。
     /// </summary>
     /// <param name="url">原始图片 URL（绝对或相对）。</param>
-    /// <returns>可无鉴权直连的 URL；Amane 本地资源或空值为 null。</returns>
+    /// <returns>可无鉴权直连的 URL；未配置图片 Token 的 Amane 本地资源或空值为 null。</returns>
     public string? ToDirectImageUrl(string? url)
     {
         if (string.IsNullOrWhiteSpace(url))
@@ -394,9 +395,21 @@ public sealed class AmaneClient
             return null;
         }
 
-        var serverUrl = ServerUrl;
-        var isAmaneLocal = url.StartsWith('/') || IsAmaneUrl(url);
-        return isAmaneLocal ? null : url;
+        var isRelative = url.StartsWith('/');
+        if (!isRelative && !IsAmaneUrl(url))
+        {
+            return url;
+        }
+
+        var imageToken = _settings.ImageToken?.Trim();
+        if (string.IsNullOrEmpty(imageToken))
+        {
+            return null;
+        }
+
+        var absolute = isRelative ? ServerUrl + url : url;
+        var separator = absolute.Contains('?') ? '&' : '?';
+        return $"{absolute}{separator}{ImageTokenQuery}={Uri.EscapeDataString(imageToken)}";
     }
 
     /// <summary>
@@ -459,17 +472,17 @@ public sealed class AmaneClient
         var response = await client.SendAsync(request, timeoutCts.Token).ConfigureAwait(false);
         if (!response.IsSuccessStatusCode)
         {
-            _logger.LogWarning("Amane 图片下载失败 ({StatusCode}): {Url}", (int)response.StatusCode, url);
+            _logger.LogWarning("Amane 图片下载失败 ({StatusCode}): {Url}", (int)response.StatusCode, RedactUrl(url));
             response.Dispose();
-            throw new HttpRequestException($"图片下载失败 (HTTP {(int)response.StatusCode}): {url}");
+            throw new HttpRequestException($"图片下载失败 (HTTP {(int)response.StatusCode}): {RedactUrl(url)}");
         }
 
         var mediaType = response.Content.Headers.ContentType?.MediaType;
         if (mediaType is not null && !mediaType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
         {
-            _logger.LogWarning("Amane 图片下载返回非图片内容 ({ContentType}): {Url}", mediaType, url);
+            _logger.LogWarning("Amane 图片下载返回非图片内容 ({ContentType}): {Url}", mediaType, RedactUrl(url));
             response.Dispose();
-            throw new HttpRequestException($"图片下载返回非图片内容 ({mediaType}): {url}");
+            throw new HttpRequestException($"图片下载返回非图片内容 ({mediaType}): {RedactUrl(url)}");
         }
 
         return response;
@@ -670,6 +683,8 @@ public sealed class AmaneClient
         }
     }
 
+    private const string ImageTokenQuery = "token";
+
     private string ServerUrl => string.IsNullOrWhiteSpace(_settings.ServerUrl)
         ? "http://127.0.0.1:18000" : _settings.ServerUrl.TrimEnd('/');
 
@@ -680,6 +695,13 @@ public sealed class AmaneClient
         var basePath = server.AbsolutePath.TrimEnd('/');
         return target.Scheme == server.Scheme && target.IdnHost == server.IdnHost && target.Port == server.Port
             && (target.AbsolutePath == basePath || target.AbsolutePath.StartsWith(basePath + "/", StringComparison.Ordinal));
+    }
+
+    /// <summary>日志脱敏：图片 URL 的 query 里可能带图片 Token，只保留不含查询串的部分。</summary>
+    private static string RedactUrl(string url)
+    {
+        var index = url.IndexOf('?', StringComparison.Ordinal);
+        return index < 0 ? url : url[..index] + "?...";
     }
 
     private HttpClient CreateClient()
