@@ -47,7 +47,7 @@ Jellyfin 两版共用源码但分别编译，必须选择匹配的安装包；Em
 | Jellyfin 12.1 | `Jellyfin.Plugin.Amane.12.zip` | 单个 `Jellyfin.Plugin.Amane.dll` 放入数据目录 `plugins/Amane/` |
 | Emby .NET 8 | `Emby.Plugin.Amane.zip` | 单个 `Emby.Plugin.Amane.dll` 放入数据目录 `plugins/` |
 
-三个适配器使用相同的发布版本号（本次为 **1.0.8**）与 Amane 图标；Emby 图标内嵌在 DLL 中，插件列表显示名称仍为 **Amane**。从旧 Emby 开发包升级时，停止服务器，删除 `plugins/Amane.Emby.dll`，避免同一插件重复加载，再安装 `Emby.Plugin.Amane.dll`。若要保留旧配置，备份并将 `plugins/configurations/Amane.Emby.xml` 复制为 `plugins/configurations/Emby.Plugin.Amane.xml`（已有新配置时不要覆盖）；否则重新填写服务地址与 Token。
+三个适配器使用相同的发布版本号（本次为 **1.0.9**）与 Amane 图标；Emby 图标内嵌在 DLL 中，插件列表显示名称仍为 **Amane**。从旧 Emby 开发包升级时，停止服务器，删除 `plugins/Amane.Emby.dll`，避免同一插件重复加载，再安装 `Emby.Plugin.Amane.dll`。若要保留旧配置，备份并将 `plugins/configurations/Amane.Emby.xml` 复制为 `plugins/configurations/Emby.Plugin.Amane.xml`（已有新配置时不要覆盖）；否则重新填写服务地址与 Token。
 
 重启对应宿主。不要把宿主 SDK DLL 拷入插件目录，也不要同时部署两版 Jellyfin 适配器。三个适配器均将同一份 Core 源码编译进各自插件 DLL，不再分发独立 `Amane.Core.dll`。从此前双 DLL 开发包升级时，移除插件目录中的旧 `Amane.Core.dll`。
 
