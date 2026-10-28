@@ -45,6 +45,7 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          generate_release_notes: true
           files: |
             Jellyfin.Plugin.Amane.zip
             Jellyfin.Plugin.Amane.12.zip
