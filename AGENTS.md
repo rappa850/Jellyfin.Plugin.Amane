@@ -105,3 +105,9 @@ python scripts/probe-amane.py [番号] --actor "演员名"           # 当前公
 - 代码注释、配置页文案用中文；遵循官方 Jellyfin 插件模板结构（`.NET` 风格、文件头 XML doc）。
 - 新增 Amane 字段映射时：先参考 `https://github.com/sqzw-x/amane` 当前公开 API，并运行探针更新样本，再改 DTO + 映射 + 单测断言，三者同步；不以历史 api.md 为唯一依据。
 - 不新增第三方依赖；端点路径收敛在 `AmaneClient` 一处。
+
+## Cursor Cloud specific instructions
+
+- 云端环境只安装 .NET SDK 10（`/usr/share/dotnet`，`/usr/local/bin/dotnet`）。用它构建 net8.0、net9.0 和 net10.0；目标包由 NuGet 还原，不必再装 SDK 8 或 9。上文「本机有 SDK 9/10」指维护者的 Windows 环境。
+- 插件没有独立进程，也不要为日常开发启动 Jellyfin、Emby 或 `scripts/integration/` 里的容器。验证命令是 `dotnet build Amane.slnx -c Release` 和 `dotnet test Amane.slnx -c Release`。三个单 DLL 安装包用 `bash scripts/build-release.sh all`，输出在 `dist/`。
+- `AMANE_TOKEN` 和实时探针（`scripts/probe-amane.sh` / `probe-amane.py`）只在对照线上 Amane 时需要，默认环境不提供。
