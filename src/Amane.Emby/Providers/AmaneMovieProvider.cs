@@ -145,8 +145,10 @@ public class AmaneMovieProvider : IRemoteMetadataProvider<Movie, MovieInfo>, IHa
         {
             Name = FormatDisplayName(item),
             SearchProviderName = Name,
-            // Emby 识别预览会调用 Provider.GetImageResponse，可使用鉴权资源。
-            ImageUrl = _client.ToProxyImageUrl(item.GetPosterUrls().Concat(item.GetBackdropUrls()).FirstOrDefault())
+            // Emby Web 识别预览经 /Images/Remote 裸请求（不回调 GetImageResponse，无法带 Bearer）。
+            // 外源 URL 直出；本地资源附加图片 Token，未配置时跳过并尝试后续候选。
+            ImageUrl = item.GetPosterUrls().Concat(item.GetBackdropUrls())
+                .Select(_client.ToDirectImageUrl).FirstOrDefault(url => url is not null)
         };
 
         if (DateTime.TryParse(item.Release, CultureInfo.InvariantCulture, DateTimeStyles.None, out var releaseDate))
