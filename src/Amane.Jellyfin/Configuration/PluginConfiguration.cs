@@ -19,7 +19,7 @@ public class PluginConfiguration : BasePluginConfiguration, IAmaneSettings
     public string ApiToken { get; set; } = string.Empty;
 
     /// <summary>
-    /// Gets or sets the Amane 图片 Token（Amane 0.23.0+）。留空时本地图片（如演员头像）无法被宿主无鉴权下载。
+    /// Gets or sets the Amane 图片 Token（Amane 0.23.0+）。用于无法带 Bearer 的图片访问（演员头像、识别弹窗缩略图），以 query token 传递。留空时这些本地图片无法获取。
     /// </summary>
     public string ImageToken { get; set; } = string.Empty;
 

@@ -381,10 +381,11 @@ public sealed class AmaneClient
     }
 
     /// <summary>
-    /// 直出路径图片 URL：供无法携带 Bearer 的消费方使用——浏览器预览（识别弹窗把 ImageUrl 原样塞进
-    /// <c>&lt;img&gt;</c>）与 Jellyfin 裸 HttpClient 下载（演员头像走 ProviderManager.SaveImage）。
-    /// 外源绝对 URL 原样返回；Amane 本地资源（相对路径或域内绝对 URL）带上图片 Token 的 query 参数
-    /// （Amane 0.23.0+），未配置图片 Token 时这些消费方必然 401，返回 null 由调用方回退。
+    /// 直出路径图片 URL：供无法携带 Bearer 的消费方使用。Jellyfin 识别弹窗把 ImageUrl 原样塞进
+    /// <c>&lt;img&gt;</c>；Emby Web 识别弹窗经 <c>/Images/Remote</c> 做裸请求，不回调
+    /// <c>GetImageResponse</c>。演员头像同样由宿主裸 HttpClient 下载（ProviderManager.SaveImage /
+    /// ConvertImageToLocal）。外源绝对 URL 原样返回；Amane 本地资源（相对路径或域内绝对 URL）带上图片
+    /// Token 的 query 参数（Amane 0.23.0+），未配置图片 Token 时这些消费方必然 401，返回 null 由调用方回退。
     /// </summary>
     /// <param name="url">原始图片 URL（绝对或相对）。</param>
     /// <returns>可无鉴权直连的 URL；未配置图片 Token 的 Amane 本地资源或空值为 null。</returns>
