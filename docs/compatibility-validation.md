@@ -38,4 +38,4 @@ python scripts/integration/verify_hosts.py
 
 宿主摘要在 [host-observations.json](verification/host-observations.json)，Amane 公开 API 合成样本在 [Amane/current](../Amane/current)。测试凭据仅在本机临时运行目录与隔离容器配置内，未写入仓库。`verify_hosts.py` 需要临时目录里已经初始化的会话，不是无需准备的一键安装脚本。
 
-图片的手动选图、浏览器直出和延迟下载存在真实鉴权约束，详见 [评估报告](image-url-evaluation.md)。Emby 必须开启媒体库提前下载图片。未验证 Emby 4.9 实际服务器、其他平台/CPU 或 Mono 宿主，不能由 SDK 编译成功推断这些平台可用。用户另已反馈在其 Emby 服务器配置正确 Token 后，实际影片成功识别并获取封面和简介。发布状态以 GitHub Releases 为准。
+图片的手动选图、浏览器直出和延迟下载存在真实鉴权约束，详见 [评估报告](image-url-evaluation.md)。Emby 必须开启媒体库提前下载图片。Emby Web 识别弹窗（issue #11）经 `/Images/Remote` 裸请求 `RemoteSearchResult.ImageUrl`，搜索结果使用 `ToDirectImageUrl`（本地资源附带图片 Token），不依赖插件的 Bearer 回调。未验证 Emby 4.9 实际服务器、其他平台/CPU 或 Mono 宿主，不能由 SDK 编译成功推断这些平台可用。用户另已反馈在其 Emby 服务器配置正确 Token 后，实际影片成功识别并获取封面和简介。发布状态以 GitHub Releases 为准。

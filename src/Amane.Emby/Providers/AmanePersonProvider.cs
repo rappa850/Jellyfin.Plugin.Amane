@@ -117,8 +117,8 @@ public class AmanePersonProvider : IRemoteMetadataProvider<Person, PersonLookupI
         {
             Name = actor.Name ?? fallbackName ?? string.Empty,
             SearchProviderName = Name,
-            // 搜索弹窗缩略图由浏览器直连（无法带 token）：外源 URL 直出，Amane 本地资源为 null
-            ImageUrl = _client.ToProxyImageUrl(actor.ImageUrls?.FirstOrDefault())
+            // 搜索弹窗缩略图经 /Images/Remote 裸请求（无法带 Bearer）：外源 URL 直出，本地资源附加图片 Token。
+            ImageUrl = _client.ToDirectImageUrl(actor.ImageUrls?.FirstOrDefault())
         };
 
         if (actor.Id > 0)
